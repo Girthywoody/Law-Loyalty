@@ -18,7 +18,7 @@ import {
   updateManagerRestaurants,
   deleteManager 
 } from '../services/firebaseService';
-import { RESTAURANTS } from '../constants/restaurants';
+import { RESTAURANTS } from '../restaurants';
 
 const RestaurantSelector = ({ selectedRestaurants, onChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
