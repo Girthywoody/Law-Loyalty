@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Mail, User, Building, ArrowLeft, Coffee } from 'lucide-react';
+import { Mail, User, Building, ArrowLeft, Coffee, Check, Loader } from 'lucide-react';
+import { RESTAURANTS } from '../constants/restaurants';
 
 const RegisterPage = ({ onBack }) => {
   const [form, setForm] = useState({
@@ -108,9 +109,19 @@ const RegisterPage = ({ onBack }) => {
             >
               <option value="">Select Restaurant</option>
               {RESTAURANTS.map((restaurant) => (
-                <option key={restaurant.name} value={restaurant.name}>
-                  {restaurant.name}
-                </option>
+                restaurant.locations ? (
+                  // If restaurant has multiple locations, create options for each
+                  restaurant.locations.map(location => (
+                    <option key={`${restaurant.name}-${location}`} value={`${restaurant.name} - ${location}`}>
+                      {restaurant.name} - {location}
+                    </option>
+                  ))
+                ) : (
+                  // If single location, create one option
+                  <option key={restaurant.name} value={restaurant.name}>
+                    {restaurant.name}
+                  </option>
+                )
               ))}
             </select>
           </div>
