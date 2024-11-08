@@ -214,3 +214,69 @@ export const getAllManagers = async () => {
     throw error;
   }
 };
+
+// Create new manager
+export const createManager = async (managerData) => {
+  try {
+    // Check if email is already registered
+    const emailQuery = query(
+      collection(db, 'users'),
+      where('email', '==', managerData.email)
+    );
+    const emailCheck = await getDocs(emailQuery);
+    if (!emailCheck.empty) {
+      throw new Error('Email already registered.');
+    }
+
+    // Create auth user
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      managerData.email,
+      // Generate a random temporary password
+      Math.random().toString(36).slice(-8)
+    );
+
+    // Send password reset email for the manager to set their own password
+    await sendPasswordResetEmail(auth, managerData.email);
+
+    // Create user document
+    await setDoc(doc(db, 'users', userCredential.user.uid), {
+      uid: userCredential.user.uid,
+      firstName: managerData.firstName,
+      lastName: managerData.lastName,
+      email: managerData.email,
+      restaurants: managerData.restaurants,
+      role: 'manager',
+      status: 'active',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+
+    return userCredential.user;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Update manager's restaurants
+export const updateManagerRestaurants = async (managerId, restaurants) => {
+  try {
+    await updateDoc(doc(db, 'users', managerId), {
+      restaurants: restaurants,
+      updatedAt: serverTimestamp()
+    });
+    return true;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Delete manager
+export const deleteManager = async (managerId) => {
+  try {
+    await deleteDoc(doc(db, 'users', managerId));
+    return true;
+  } catch (error) {
+    throw error;
+  }
+};
