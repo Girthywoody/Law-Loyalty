@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, User, Building, ArrowLeft, Coffee, Check, Loader, Lock } from 'lucide-react';
 import { registerEmployee } from '../services/firebaseService';
-import { RESTAURANTS } from './restaurants';
+import { RESTAURANTS } from '../restaurants';
 
 const RegisterPage = ({ onBack }) => {
   const [form, setForm] = useState({
