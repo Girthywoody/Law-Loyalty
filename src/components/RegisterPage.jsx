@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Mail, User, Building, ArrowLeft, Coffee, Check, Loader } from 'lucide-react';
+import { Mail, User, Building, ArrowLeft, Coffee, Check, Loader, Lock } from 'lucide-react';
 import { registerEmployee } from '../services/firebaseService';
+import { RESTAURANTS } from '../restaurants'; // Add this import
 
 const RegisterPage = ({ onBack }) => {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    password: '', // Added password field
+    password: '',
     selectedRestaurant: ''
   });
   const [error, setError] = useState('');
@@ -134,12 +135,12 @@ const RegisterPage = ({ onBack }) => {
               {RESTAURANTS.map((restaurant) => (
                 restaurant.locations ? (
                   restaurant.locations.map(location => (
-                    <option key={`${restaurant.name}-${location}`} value={`${restaurant.name} - ${location}`}>
-                      {restaurant.name} - {location}
+                    <option key={`${restaurant.name}-${location.name}`} value={`${restaurant.name} - ${location.name}`}>
+                      {restaurant.name} - {location.name}
                     </option>
                   ))
                 ) : (
-                  <option key={restaurant.name} value={restaurant.name}>
+                  <option key={restaurant.id} value={restaurant.name}>
                     {restaurant.name}
                   </option>
                 )
