@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Coffee } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { loginUser, resetPassword } from '../services/firebaseService';
 import RegisterPage from './RegisterPage';
 
 const LoginPage = ({ onLogin }) => {
@@ -8,17 +8,42 @@ const LoginPage = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (loginForm.email === "admin@jlaw.com" && loginForm.password === "admin123") {
-      onLogin(true, 'admin');
-    } else if (loginForm.email === "manager@jlaw.com" && loginForm.password === "demo123") {
-      onLogin(true, 'manager');
-    } else if (loginForm.email === "employee@jlaw.com" && loginForm.password === "demo123") {
-      onLogin(true, 'employee');
-    } else {
-      setError('Invalid credentials. Please check demo access below.');
+    setError('');
+    setLoading(true);
+
+    try {
+      const { user, userData } = await loginUser(loginForm.email, loginForm.password);
+      
+      if (!user.emailVerified) {
+        setError('Please verify your email before logging in.');
+        setLoading(false);
+        return;
+      }
+
+      onLogin(true, userData.role);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!loginForm.email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    try {
+      await resetPassword(loginForm.email);
+      setResetSent(true);
+      setError('');
+    } catch (error) {
+      setError(error.message);
     }
   };
 
@@ -65,40 +90,47 @@ const LoginPage = ({ onLogin }) => {
             />
           </div>
 
+          {error && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          {resetSent && (
+            <div className="p-3 bg-green-50 text-green-600 rounded-lg text-sm">
+              Password reset instructions have been sent to your email.
+            </div>
+          )}
+
           <div className="text-right">
-            <button type="button" className="text-sm text-violet-600 hover:text-violet-700">
-              Forget Password
+            <button 
+              type="button" 
+              onClick={handlePasswordReset}
+              className="text-sm text-violet-600 hover:text-violet-700"
+            >
+              Forgot Password?
             </button>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-violet-500 to-purple-600 text-white py-3 rounded-xl hover:from-violet-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg shadow-violet-200"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-violet-500 to-purple-600 text-white py-3 rounded-xl hover:from-violet-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg shadow-violet-200 disabled:opacity-50"
           >
-            Sign In
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        {/* Demo credentials */}
-        <div className="mt-6 p-4 bg-violet-50 rounded-lg">
-          <p className="font-medium text-violet-900 mb-2">Demo Access:</p>
-          <div className="text-sm text-violet-800 space-y-1">
-            <p>Manager: manager@jlaw.com</p>
-            <p>Employee: employee@jlaw.com</p>
-            <p>Password: demo123</p>
-          </div>
+        {/* Add this after the login button */}
+        <div className="mt-4 text-center">
+          <p className="text-gray-600">New employee?</p>
+          <button
+            onClick={() => setShowRegister(true)}
+            className="mt-2 text-violet-600 hover:text-violet-700 font-medium"
+          >
+            Register here
+          </button>
         </div>
-      </div>
-
-      {/* Add this after the login button */}
-      <div className="mt-4 text-center">
-        <p className="text-gray-600">New employee?</p>
-        <button
-          onClick={() => setShowRegister(true)}
-          className="mt-2 text-violet-600 hover:text-violet-700 font-medium"
-        >
-          Register here
-        </button>
       </div>
     </div>
   );

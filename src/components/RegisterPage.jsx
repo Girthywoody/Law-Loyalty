@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Mail, User, Building, ArrowLeft, Coffee, Check, Loader } from 'lucide-react';
-import { RESTAURANTS } from '../constants/restaurants';
+import { registerEmployee } from '../services/firebaseService';
 
 const RegisterPage = ({ onBack }) => {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
     email: '',
+    password: '', // Added password field
     selectedRestaurant: ''
   });
   const [error, setError] = useState('');
@@ -16,11 +17,23 @@ const RegisterPage = ({ onBack }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate registration delay
-    setTimeout(() => {
+    setError('');
+
+    try {
+      await registerEmployee({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        password: form.password,
+        restaurant: form.selectedRestaurant
+      });
+
       setSuccess(true);
+    } catch (error) {
+      setError(error.message);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   if (success) {
@@ -30,9 +43,10 @@ const RegisterPage = ({ onBack }) => {
           <Check className="w-12 h-12 text-white" />
         </div>
         <h2 className="text-2xl font-bold text-green-600 mb-4">Registration Successful!</h2>
-        <p className="text-gray-600 mb-6 text-center max-w-sm">
-          Your registration is pending manager approval. Please check your email for further instructions.
-        </p>
+        <div className="text-gray-600 mb-6 text-center max-w-sm space-y-3">
+          <p>Your registration is pending manager approval.</p>
+          <p>Please check your email and verify your account.</p>
+        </div>
         <button
           onClick={onBack}
           className="text-violet-600 hover:text-violet-700 font-medium flex items-center gap-2"
@@ -46,12 +60,10 @@ const RegisterPage = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-violet-50 to-purple-50 flex flex-col items-center justify-center p-6">
-      {/* Logo */}
       <div className="w-20 h-20 bg-violet-600 rounded-2xl mb-6 flex items-center justify-center">
         <Coffee className="w-12 h-12 text-white" />
       </div>
 
-      {/* App Name */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
           Employee Registration
@@ -59,7 +71,6 @@ const RegisterPage = ({ onBack }) => {
         <p className="text-gray-600 mt-2">Fill in your details to get started</p>
       </div>
 
-      {/* Registration Form */}
       <div className="w-full max-w-sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -100,6 +111,18 @@ const RegisterPage = ({ onBack }) => {
           </div>
 
           <div className="relative">
+            <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            <input
+              type="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))}
+              className="w-full pl-10 px-4 py-3 rounded-xl bg-white border border-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+              required
+            />
+          </div>
+
+          <div className="relative">
             <Building className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
             <select
               value={form.selectedRestaurant}
@@ -110,14 +133,12 @@ const RegisterPage = ({ onBack }) => {
               <option value="">Select Restaurant</option>
               {RESTAURANTS.map((restaurant) => (
                 restaurant.locations ? (
-                  // If restaurant has multiple locations, create options for each
                   restaurant.locations.map(location => (
                     <option key={`${restaurant.name}-${location}`} value={`${restaurant.name} - ${location}`}>
                       {restaurant.name} - {location}
                     </option>
                   ))
                 ) : (
-                  // If single location, create one option
                   <option key={restaurant.name} value={restaurant.name}>
                     {restaurant.name}
                   </option>
@@ -160,4 +181,4 @@ const RegisterPage = ({ onBack }) => {
   );
 };
 
-export default RegisterPage; 
+export default RegisterPage;

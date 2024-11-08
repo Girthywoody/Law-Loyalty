@@ -1,201 +1,191 @@
-import { db } from '../firebase/config';
 import { 
-  collection,
-  doc,
-  getDocs,
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail
+} from 'firebase/auth';
+import { 
+  doc, 
+  setDoc, 
   getDoc,
-  setDoc,
-  updateDoc,
+  getDocs,
+  collection,
   query,
   where,
-  deleteDoc
+  updateDoc,
+  deleteDoc,
+  serverTimestamp 
 } from 'firebase/firestore';
-import { 
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  sendEmailVerification
-} from 'firebase/auth';
+import { auth, db } from '../config';
 
-export async function getEmployeesByRestaurant(restaurantId) {
-  const q = query(
-    collection(db, 'users'),
-    where('restaurants', 'array-contains', restaurantId),
-    where('role', '==', 'employee')
-  );
-  
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
-}
-
-export async function updateEmployeeStatus(employeeId, status) {
-  const userRef = doc(db, 'users', employeeId);
-  await updateDoc(userRef, { status });
-}
-
-export async function addNewEmployee(userData) {
-  const userRef = doc(db, 'users', userData.uid);
-  await setDoc(userRef, {
-    ...userData,
-    role: 'employee',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  });
-}
-
-export async function getRestaurantDetails(restaurantId) {
-  const docRef = doc(db, 'restaurants', restaurantId);
-  const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
-}
-
-export async function registerEmployee({
-  email,
-  password,
-  firstName,
-  lastName,
-  selectedRestaurant
-}) {
+// User Authentication
+export const loginUser = async (email, password) => {
   try {
-    // Create auth user
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
     
-    // Create user document in Firestore
-    await setDoc(doc(db, 'users', userCredential.user.uid), {
-      firstName,
-      lastName,
-      email,
+    if (!userDoc.exists()) {
+      // Check if user is in pending registration
+      const pendingDoc = await getDoc(doc(db, 'pendingRegistrations', userCredential.user.uid));
+      if (pendingDoc.exists()) {
+        throw new Error('Your registration is pending approval.');
+      }
+      throw new Error('User not found.');
+    }
+
+    const userData = userDoc.data();
+    if (userData.status === 'terminated') {
+      throw new Error('Your account has been terminated. Please contact your manager.');
+    }
+
+    return { user: userCredential.user, userData };
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Register new employee
+export const registerEmployee = async (employeeData) => {
+  try {
+    // Check if email is already registered
+    const emailQuery = query(
+      collection(db, 'users'),
+      where('email', '==', employeeData.email)
+    );
+    const emailCheck = await getDocs(emailQuery);
+    if (!emailCheck.empty) {
+      throw new Error('Email already registered.');
+    }
+
+    // Create auth user
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      employeeData.email,
+      employeeData.password
+    );
+
+    // Send verification email
+    await sendEmailVerification(userCredential.user);
+
+    // Create pending registration document
+    await setDoc(doc(db, 'pendingRegistrations', userCredential.user.uid), {
+      uid: userCredential.user.uid,
+      firstName: employeeData.firstName,
+      lastName: employeeData.lastName,
+      email: employeeData.email,
+      restaurant: employeeData.restaurant,
       role: 'employee',
-      status: 'Pending', // Will be updated to 'Active' by manager
-      restaurant: selectedRestaurant,
-      createdAt: new Date().toISOString(),
+      status: 'pending',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     });
-
-    // Send password reset email so user can set their own password
-    await sendPasswordResetEmail(auth, email);
 
     return userCredential.user;
   } catch (error) {
     throw error;
   }
-}
+};
 
-export async function getPendingEmployees(restaurantId) {
-  const q = query(
-    collection(db, 'users'),
-    where('restaurant', '==', restaurantId),
-    where('status', '==', 'Pending')
-  );
-  
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
-}
-
-export async function activateEmployee(employeeId) {
-  const userRef = doc(db, 'users', employeeId);
-  await updateDoc(userRef, { 
-    status: 'Active',
-    activatedAt: new Date().toISOString()
-  });
-}
-
-export async function approveEmployee(employeeId) {
+// Get pending registrations for manager
+export const getPendingRegistrations = async (restaurant) => {
   try {
-    const userRef = doc(db, 'users', employeeId);
+    const q = query(
+      collection(db, 'pendingRegistrations'),
+      where('restaurant', '==', restaurant)
+    );
     
-    // Update user status to active
-    await updateDoc(userRef, {
-      status: 'Active',
-      approvedAt: new Date().toISOString()
+    const querySnapshot = await getDocs(q);
+    const pendingUsers = [];
+    
+    querySnapshot.forEach((doc) => {
+      pendingUsers.push({ id: doc.id, ...doc.data() });
+    });
+    
+    return pendingUsers;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Approve employee registration
+export const approveRegistration = async (userId) => {
+  try {
+    // Get pending registration data
+    const pendingDoc = await getDoc(doc(db, 'pendingRegistrations', userId));
+    if (!pendingDoc.exists()) {
+      throw new Error('Pending registration not found.');
+    }
+
+    const pendingData = pendingDoc.data();
+
+    // Create user document
+    await setDoc(doc(db, 'users', userId), {
+      ...pendingData,
+      status: 'active',
+      updatedAt: serverTimestamp()
     });
 
-    // Send password reset email to employee
-    const userDoc = await getDoc(userRef);
-    await sendPasswordResetEmail(auth, userDoc.data().email);
+    // Delete pending registration
+    await deleteDoc(doc(db, 'pendingRegistrations', userId));
 
     return true;
   } catch (error) {
-    console.error('Error approving employee:', error);
     throw error;
   }
-}
+};
 
-export async function rejectEmployee(employeeId) {
+// Reject employee registration
+export const rejectRegistration = async (userId) => {
   try {
-    // Delete the user document
-    await deleteDoc(doc(db, 'users', employeeId));
+    // Delete pending registration
+    await deleteDoc(doc(db, 'pendingRegistrations', userId));
     return true;
   } catch (error) {
-    console.error('Error rejecting employee:', error);
     throw error;
   }
-}
+};
 
-export async function createManager({
-  email,
-  firstName,
-  lastName,
-  restaurants
-}) {
+// Update employee status
+export const updateEmployeeStatus = async (userId, status) => {
   try {
-    // Generate temporary password
-    const tempPassword = Math.random().toString(36).slice(-8);
-    
-    // Create auth user
-    const userCredential = await createUserWithEmailAndPassword(auth, email, tempPassword);
-    
-    // Create manager document
-    await setDoc(doc(db, 'users', userCredential.user.uid), {
-      firstName,
-      lastName,
-      email,
-      role: 'manager',
-      status: 'Active',
-      restaurants, // Array of restaurant IDs they manage
-      createdAt: new Date().toISOString(),
-      createdBy: auth.currentUser.uid
+    await updateDoc(doc(db, 'users', userId), {
+      status: status,
+      updatedAt: serverTimestamp()
     });
+    return true;
+  } catch (error) {
+    throw error;
+  }
+};
 
-    // Send password reset email
+// Password reset
+export const resetPassword = async (email) => {
+  try {
     await sendPasswordResetEmail(auth, email);
-
-    return userCredential.user;
+    return true;
   } catch (error) {
     throw error;
   }
-}
+};
 
-export async function getAllManagers() {
+// Get employees for a restaurant
+export const getEmployees = async (restaurant) => {
   try {
     const q = query(
       collection(db, 'users'),
-      where('role', '==', 'manager')
+      where('restaurant', '==', restaurant),
+      where('role', '==', 'employee')
     );
     
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function updateManagerRestaurants(managerId, restaurants) {
-  try {
-    const managerRef = doc(db, 'users', managerId);
-    await updateDoc(managerRef, {
-      restaurants,
-      updatedAt: new Date().toISOString()
+    const querySnapshot = await getDocs(q);
+    const employees = [];
+    
+    querySnapshot.forEach((doc) => {
+      employees.push({ id: doc.id, ...doc.data() });
     });
-    return true;
+    
+    return employees;
   } catch (error) {
     throw error;
   }
-} 
+};
