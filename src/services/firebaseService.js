@@ -7,11 +7,13 @@ import {
   setDoc,
   updateDoc,
   query,
-  where
+  where,
+  deleteDoc
 } from 'firebase/firestore';
 import { 
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail 
+  sendPasswordResetEmail,
+  sendEmailVerification
 } from 'firebase/auth';
 
 export async function getEmployeesByRestaurant(restaurantId) {
@@ -100,4 +102,36 @@ export async function activateEmployee(employeeId) {
     status: 'Active',
     activatedAt: new Date().toISOString()
   });
+}
+
+export async function approveEmployee(employeeId) {
+  try {
+    const userRef = doc(db, 'users', employeeId);
+    
+    // Update user status to active
+    await updateDoc(userRef, {
+      status: 'Active',
+      approvedAt: new Date().toISOString()
+    });
+
+    // Send password reset email to employee
+    const userDoc = await getDoc(userRef);
+    await sendPasswordResetEmail(auth, userDoc.data().email);
+
+    return true;
+  } catch (error) {
+    console.error('Error approving employee:', error);
+    throw error;
+  }
+}
+
+export async function rejectEmployee(employeeId) {
+  try {
+    // Delete the user document
+    await deleteDoc(doc(db, 'users', employeeId));
+    return true;
+  } catch (error) {
+    console.error('Error rejecting employee:', error);
+    throw error;
+  }
 } 

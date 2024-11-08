@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Coffee } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import RegisterPage from './RegisterPage';
 
 const LoginPage = () => {
   const { login } = useAuth();
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -20,6 +22,10 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
+
+  if (showRegister) {
+    return <RegisterPage onBack={() => setShowRegister(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-violet-50 to-purple-50 flex flex-col items-center justify-center p-6">
@@ -83,6 +89,17 @@ const LoginPage = () => {
             <p>Password: demo123</p>
           </div>
         </div>
+      </div>
+
+      {/* Add this after the login button */}
+      <div className="mt-4 text-center">
+        <p className="text-gray-600">New employee?</p>
+        <button
+          onClick={() => setShowRegister(true)}
+          className="mt-2 text-violet-600 hover:text-violet-700 font-medium"
+        >
+          Register here
+        </button>
       </div>
     </div>
   );
