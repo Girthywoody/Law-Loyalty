@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Building, LogOut, Coffee, Gift, UserPlus, ChevronDown, MapPin, Clock, Calendar } from 'lucide-react';
 import LoginPage from './LoginPage';
+import AdminDashboard from './AdminDashboard';
 
 const RESTAURANTS = [
   { name: "Montana's", discount: "20%" },
@@ -59,6 +60,10 @@ export default function LoyaltyApp() {
 
   if (!isAuthenticated) {
     return <LoginPage onLogin={handleLogin} />;
+  }
+
+  if (userRole === 'admin') {
+    return <AdminDashboard />;
   }
 
   if (userRole === 'employee' && !selectedRestaurant) {

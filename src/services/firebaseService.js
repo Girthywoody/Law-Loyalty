@@ -134,4 +134,68 @@ export async function rejectEmployee(employeeId) {
     console.error('Error rejecting employee:', error);
     throw error;
   }
+}
+
+export async function createManager({
+  email,
+  firstName,
+  lastName,
+  restaurants
+}) {
+  try {
+    // Generate temporary password
+    const tempPassword = Math.random().toString(36).slice(-8);
+    
+    // Create auth user
+    const userCredential = await createUserWithEmailAndPassword(auth, email, tempPassword);
+    
+    // Create manager document
+    await setDoc(doc(db, 'users', userCredential.user.uid), {
+      firstName,
+      lastName,
+      email,
+      role: 'manager',
+      status: 'Active',
+      restaurants, // Array of restaurant IDs they manage
+      createdAt: new Date().toISOString(),
+      createdBy: auth.currentUser.uid
+    });
+
+    // Send password reset email
+    await sendPasswordResetEmail(auth, email);
+
+    return userCredential.user;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getAllManagers() {
+  try {
+    const q = query(
+      collection(db, 'users'),
+      where('role', '==', 'manager')
+    );
+    
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function updateManagerRestaurants(managerId, restaurants) {
+  try {
+    const managerRef = doc(db, 'users', managerId);
+    await updateDoc(managerRef, {
+      restaurants,
+      updatedAt: new Date().toISOString()
+    });
+    return true;
+  } catch (error) {
+    throw error;
+  }
 } 

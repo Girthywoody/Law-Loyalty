@@ -11,7 +11,9 @@ const LoginPage = ({ onLogin }) => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (loginForm.email === "manager@jlaw.com" && loginForm.password === "demo123") {
+    if (loginForm.email === "admin@jlaw.com" && loginForm.password === "admin123") {
+      onLogin(true, 'admin');
+    } else if (loginForm.email === "manager@jlaw.com" && loginForm.password === "demo123") {
       onLogin(true, 'manager');
     } else if (loginForm.email === "employee@jlaw.com" && loginForm.password === "demo123") {
       onLogin(true, 'employee');
