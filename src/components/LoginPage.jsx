@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Coffee } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
-const LoginPage = ({ onLogin }) => {
+const LoginPage = () => {
+  const { login } = useAuth();
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (loginForm.email === "manager@jlaw.com" && loginForm.password === "demo123") {
-      onLogin(true, 'manager');
-    } else if (loginForm.email === "employee@jlaw.com" && loginForm.password === "demo123") {
-      onLogin(true, 'employee');
+    try {
+      setError('');
+      setLoading(true);
+      await login(loginForm.email, loginForm.password);
+    } catch (error) {
+      setError('Failed to sign in: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 

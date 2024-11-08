@@ -1,10 +1,11 @@
 import LoyaltyApp from './components/LoyaltyApp'
+import { AuthProvider } from './contexts/AuthContext'
 
 function App() {
   return (
-    <div className="min-h-screen">
+    <AuthProvider>
       <LoyaltyApp />
-    </div>
+    </AuthProvider>
   )
 }
 

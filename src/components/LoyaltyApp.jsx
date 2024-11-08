@@ -32,6 +32,7 @@ export default function LoyaltyApp() {
     { name: 'Jane Doe', email: 'jane@jlaw.com', restaurant: "Swiss Chalet", status: 'Active' }
   ]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -78,13 +79,13 @@ export default function LoyaltyApp() {
                 <div key={restaurant.name}>
                   <button
                     onClick={() => {
-                      if (!restaurant.locations) {
+                      if (restaurant.locations) {
+                        setOpenDropdown(openDropdown === restaurant.name ? null : restaurant.name);
+                      } else {
                         setSelectedRestaurant(restaurant.name);
                       }
                     }}
-                    className={`w-full p-4 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-between group ${
-                      restaurant.locations ? 'cursor-pointer' : ''
-                    }`}
+                    className="w-full p-4 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-between group"
                   >
                     <div className="flex items-center gap-3">
                       <Building className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
@@ -100,13 +101,17 @@ export default function LoyaltyApp() {
                       </div>
                     </div>
                     {restaurant.locations && (
-                      <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
+                      <ChevronDown 
+                        className={`w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-transform duration-200 ${
+                          openDropdown === restaurant.name ? 'rotate-180' : ''
+                        }`}
+                      />
                     )}
                   </button>
                   
-                  {/* Locations Dropdown */}
-                  {restaurant.locations && (
-                    <div className="mt-2 ml-8 space-y-2">
+                  {/* Locations Dropdown - Only show when this restaurant is selected */}
+                  {restaurant.locations && openDropdown === restaurant.name && (
+                    <div className="mt-2 ml-8 space-y-2 animate-fadeIn">
                       {restaurant.locations.map((location) => (
                         <button
                           key={location}
