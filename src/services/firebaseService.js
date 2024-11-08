@@ -17,6 +17,8 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 import { auth, db } from '../config';
+import { auth, db } from '../firebase/config';
+
 
 // User Authentication
 export const loginUser = async (email, password) => {
