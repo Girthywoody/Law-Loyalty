@@ -3,23 +3,20 @@ import { Mail, Lock, Coffee } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import RegisterPage from './RegisterPage';
 
-const LoginPage = () => {
-  const { login } = useAuth();
+const LoginPage = ({ onLogin }) => {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
 
-  const handleLogin = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
-    try {
-      setError('');
-      setLoading(true);
-      await login(loginForm.email, loginForm.password);
-    } catch (error) {
-      setError('Failed to sign in: ' + error.message);
-    } finally {
-      setLoading(false);
+    if (loginForm.email === "manager@jlaw.com" && loginForm.password === "demo123") {
+      onLogin(true, 'manager');
+    } else if (loginForm.email === "employee@jlaw.com" && loginForm.password === "demo123") {
+      onLogin(true, 'employee');
+    } else {
+      setError('Invalid credentials. Please check demo access below.');
     }
   };
 
