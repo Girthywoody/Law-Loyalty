@@ -3,17 +3,18 @@ import { User, Building, LogOut, Coffee, Gift, UserPlus, ChevronDown, MapPin, Cl
 import LoginPage from './LoginPage';
 
 const RESTAURANTS = [
-  { name: "Montana's", discount: null },
-  { name: "Kelsey's", discount: null },
+  { name: "Montana's", discount: "20%" },
+  { name: "Kelsey's", discount: "20%" },
   { name: "Cora's Breakfast", discount: "10%" },
-  { name: "J's Roadhouse", discount: null },
-  { name: "Swiss Chalet", discount: null },
+  { name: "J's Roadhouse", discount: "20%" },
+  { name: "Swiss Chalet", discount: "20%" },
   {
     name: "Overtime Bar",
+    discount: "20%",
     locations: ["Sudbury", "Val Caron", "Chelmsford"]
   },
-  { name: "Lot 88 Steakhouse", discount: null },
-  { name: "Poke Bar", discount: null },
+  { name: "Lot 88 Steakhouse", discount: "20%" },
+  { name: "Poke Bar", discount: "20%" },
   {
     name: "Happy Life",
     discount: "10%",
@@ -48,6 +49,13 @@ export default function LoyaltyApp() {
     ));
   };
 
+  const getEmployeeDiscount = (restaurantName) => {
+    const restaurant = RESTAURANTS.find(r => 
+      restaurantName.startsWith(r.name)
+    );
+    return restaurant?.discount || "20%";
+  };
+
   if (!isAuthenticated) {
     return <LoginPage onLogin={handleLogin} />;
   }
@@ -70,29 +78,34 @@ export default function LoyaltyApp() {
                 <div key={restaurant.name}>
                   <button
                     onClick={() => {
-                      if (restaurant.locations) {
+                      if (!restaurant.locations) {
                         setSelectedRestaurant(restaurant.name);
-                      } else {
-                        setSelectedRestaurant(restaurant.name);
-                        setSelectedLocation('');
                       }
                     }}
-                    className="w-full p-4 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-between group"
+                    className={`w-full p-4 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-between group ${
+                      restaurant.locations ? 'cursor-pointer' : ''
+                    }`}
                   >
                     <div className="flex items-center gap-3">
                       <Building className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
-                      <span className="font-medium group-hover:text-blue-600">
-                        {restaurant.name}
-                        {restaurant.discount && 
-                          <span className="ml-2 text-sm text-blue-600">({restaurant.discount})</span>
-                        }
-                      </span>
+                      <div className="text-left">
+                        <span className="font-medium group-hover:text-blue-600">
+                          {restaurant.name}
+                        </span>
+                        {restaurant.discount && (
+                          <span className="ml-2 text-sm text-blue-600">
+                            ({restaurant.discount})
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
+                    {restaurant.locations && (
+                      <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
+                    )}
                   </button>
                   
-                  {/* Show locations dropdown if restaurant is selected and has locations */}
-                  {selectedRestaurant === restaurant.name && restaurant.locations && (
+                  {/* Locations Dropdown */}
+                  {restaurant.locations && (
                     <div className="mt-2 ml-8 space-y-2">
                       {restaurant.locations.map((location) => (
                         <button
@@ -237,7 +250,7 @@ export default function LoyaltyApp() {
             <div className="p-4 bg-gray-50 rounded-xl flex justify-between items-center">
               <span className="font-medium text-gray-900">Employee Discount</span>
               <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                20%
+                {getEmployeeDiscount(selectedRestaurant)}
               </span>
             </div>
           </div>
