@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { User, Building, LogOut, Mail, Lock, Coffee, Gift, UserPlus, ChevronDown, MapPin } from 'lucide-react';
+import { User, Building, LogOut, Coffee, Gift, UserPlus, ChevronDown, MapPin } from 'lucide-react';
+import LoginPage from './LoginPage';
 
 const RESTAURANTS = ["Montana's", "Swiss Chalet", "East Side Mario's", "Harvey's", "New York Fries", "The Keg", "Bulgogi House", "Fionn MacCool's", "Kelly's"];
 
 export default function LoyaltyApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [userRole, setUserRole] = useState(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState('');
   const [employees, setEmployees] = useState([
@@ -13,15 +13,9 @@ export default function LoyaltyApp() {
     { name: 'Jane Doe', email: 'jane@jlaw.com', restaurant: "Swiss Chalet", status: 'Active' }
   ]);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (loginForm.email === "manager@jlaw.com" && loginForm.password === "demo123") {
-      setIsAuthenticated(true);
-      setUserRole('manager');
-    } else if (loginForm.email === "employee@jlaw.com" && loginForm.password === "demo123") {
-      setIsAuthenticated(true);
-      setUserRole('employee');
-    }
+  const handleLogin = (authenticated, role) => {
+    setIsAuthenticated(authenticated);
+    setUserRole(role);
   };
 
   const handleTerminate = (email) => {
@@ -31,54 +25,7 @@ export default function LoyaltyApp() {
   };
 
   if (!isAuthenticated) {
-    return (
-      <div className="w-full min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
-        <div className="max-w-md mx-auto">
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-              <Coffee className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-blue-600">JLaw Enterprise</h1>
-          </div>
-          
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg">
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={loginForm.email}
-                  onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full pl-10 p-3 bg-gray-50 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                />
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={loginForm.password}
-                  onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
-                  className="w-full pl-10 p-3 bg-gray-50 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                />
-              </div>
-              <button className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors">
-                Sign In
-              </button>
-            </form>
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p className="font-medium text-blue-900 mb-2">Demo Access:</p>
-              <div className="text-sm text-blue-800 space-y-1">
-                <p>Manager: manager@jlaw.com</p>
-                <p>Employee: employee@jlaw.com</p>
-                <p>Password: demo123</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   if (userRole === 'employee' && !selectedRestaurant) {
