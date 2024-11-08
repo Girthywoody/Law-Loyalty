@@ -190,3 +190,27 @@ export const getEmployees = async (restaurant) => {
     throw error;
   }
 };
+
+// Get all managers
+export const getAllManagers = async () => {
+  try {
+    const q = query(
+      collection(db, 'users'),
+      where('role', '==', 'manager')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const managers = [];
+    
+    querySnapshot.forEach((doc) => {
+      const managerData = doc.data();
+      // Don't include sensitive data
+      delete managerData.password;
+      managers.push({ id: doc.id, ...managerData });
+    });
+    
+    return managers;
+  } catch (error) {
+    throw error;
+  }
+};
