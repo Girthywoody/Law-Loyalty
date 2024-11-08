@@ -2,12 +2,30 @@ import React, { useState } from 'react';
 import { User, Building, LogOut, Coffee, Gift, UserPlus, ChevronDown, MapPin } from 'lucide-react';
 import LoginPage from './LoginPage';
 
-const RESTAURANTS = ["Montana's", "Swiss Chalet", "East Side Mario's", "Harvey's", "New York Fries", "The Keg", "Bulgogi House", "Fionn MacCool's", "Kelly's"];
+const RESTAURANTS = [
+  { name: "Montana's", discount: null },
+  { name: "Kelsey's", discount: null },
+  { name: "Cora's Breakfast", discount: "10%" },
+  { name: "J's Roadhouse", discount: null },
+  { name: "Swiss Chalet", discount: null },
+  {
+    name: "Overtime Bar",
+    locations: ["Sudbury", "Val Caron", "Chelmsford"]
+  },
+  { name: "Lot 88 Steakhouse", discount: null },
+  { name: "Poke Bar", discount: null },
+  {
+    name: "Happy Life",
+    discount: "10%",
+    locations: ["Kingsway", "Val Caron", "Chelmsford"]
+  }
+];
 
 export default function LoyaltyApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('');
   const [employees, setEmployees] = useState([
     { name: 'John Smith', email: 'john@jlaw.com', restaurant: "Montana's", status: 'Active' },
     { name: 'Jane Doe', email: 'jane@jlaw.com', restaurant: "Swiss Chalet", status: 'Active' }
@@ -43,17 +61,49 @@ export default function LoyaltyApp() {
           <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg">
             <div className="space-y-4">
               {RESTAURANTS.map((restaurant) => (
-                <button
-                  key={restaurant}
-                  onClick={() => setSelectedRestaurant(restaurant)}
-                  className="w-full p-4 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-between group"
-                >
-                  <div className="flex items-center gap-3">
-                    <Building className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
-                    <span className="font-medium group-hover:text-blue-600">{restaurant}</span>
-                  </div>
-                  <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
-                </button>
+                <div key={restaurant.name}>
+                  <button
+                    onClick={() => {
+                      if (restaurant.locations) {
+                        setSelectedRestaurant(restaurant.name);
+                      } else {
+                        setSelectedRestaurant(restaurant.name);
+                        setSelectedLocation('');
+                      }
+                    }}
+                    className="w-full p-4 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Building className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
+                      <span className="font-medium group-hover:text-blue-600">
+                        {restaurant.name}
+                        {restaurant.discount && 
+                          <span className="ml-2 text-sm text-blue-600">({restaurant.discount})</span>
+                        }
+                      </span>
+                    </div>
+                    <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
+                  </button>
+                  
+                  {/* Show locations dropdown if restaurant is selected and has locations */}
+                  {selectedRestaurant === restaurant.name && restaurant.locations && (
+                    <div className="mt-2 ml-8 space-y-2">
+                      {restaurant.locations.map((location) => (
+                        <button
+                          key={location}
+                          onClick={() => {
+                            setSelectedLocation(location);
+                            setSelectedRestaurant(`${restaurant.name} - ${location}`);
+                          }}
+                          className="w-full p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-2"
+                        >
+                          <MapPin className="w-4 h-4 text-blue-500" />
+                          <span className="text-sm text-blue-700">{location}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
