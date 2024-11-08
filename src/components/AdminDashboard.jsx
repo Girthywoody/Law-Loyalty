@@ -15,7 +15,8 @@ import {
 import { 
   createManager, 
   getAllManagers, 
-  updateManagerRestaurants 
+  updateManagerRestaurants,
+  deleteManager 
 } from '../services/firebaseService';
 import { RESTAURANTS } from '../constants/restaurants';
 
@@ -126,6 +127,8 @@ const AdminDashboard = () => {
   const [error, setError] = useState('');
   const [showAddManager, setShowAddManager] = useState(false);
   const [editingManager, setEditingManager] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedManager, setSelectedManager] = useState(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -183,6 +186,48 @@ const AdminDashboard = () => {
         ? prev.selectedRestaurants.filter(r => r !== restaurantName)
         : [...prev.selectedRestaurants, restaurantName]
     }));
+  };
+
+  const handleEdit = (manager) => {
+    setSelectedManager(manager);
+    setForm({
+      firstName: manager.firstName,
+      lastName: manager.lastName,
+      email: manager.email,
+      selectedRestaurants: manager.restaurants || []
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      await updateManagerRestaurants(selectedManager.id, form.selectedRestaurants);
+      await loadManagers();
+      setShowEditModal(false);
+      setSelectedManager(null);
+    } catch (err) {
+      setError('Failed to update manager');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (managerId) => {
+    if (!window.confirm('Are you sure you want to delete this manager?')) return;
+    
+    setLoading(true);
+    try {
+      await deleteManager(managerId);
+      await loadManagers();
+    } catch (err) {
+      setError('Failed to delete manager');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -263,6 +308,49 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Managers List */}
+        <div className="bg-white rounded-2xl shadow">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Restaurants</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {managers.map((manager) => (
+                  <tr key={manager.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {manager.firstName} {manager.lastName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">{manager.email}</td>
+                    <td className="px-6 py-4">
+                      {manager.restaurants?.length || 0} restaurants
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => handleEdit(manager)}
+                        className="text-indigo-600 hover:text-indigo-900 mr-2"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(manager.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );
