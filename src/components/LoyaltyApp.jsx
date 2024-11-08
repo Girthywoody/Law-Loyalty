@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { User, Building, LogOut, Coffee, Gift, UserPlus, ChevronDown, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Building, LogOut, Coffee, Gift, UserPlus, ChevronDown, MapPin, Clock, Calendar } from 'lucide-react';
 import LoginPage from './LoginPage';
 
 const RESTAURANTS = [
@@ -30,6 +30,12 @@ export default function LoyaltyApp() {
     { name: 'John Smith', email: 'john@jlaw.com', restaurant: "Montana's", status: 'Active' },
     { name: 'Jane Doe', email: 'jane@jlaw.com', restaurant: "Swiss Chalet", status: 'Active' }
   ]);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleLogin = (authenticated, role) => {
     setIsAuthenticated(authenticated);
@@ -184,36 +190,66 @@ export default function LoyaltyApp() {
     <div className="w-full min-h-screen bg-gray-50 p-6">
       <div className="max-w-md mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-xl font-bold">Employee Dashboard</h1>
-            <p className="text-gray-600 text-sm">{selectedRestaurant}</p>
+          <div className="flex items-center gap-3">
+            <Building className="w-5 h-5 text-gray-600" />
+            <h2 className="text-lg font-medium text-gray-900">{selectedRestaurant}</h2>
           </div>
-          <button onClick={() => setSelectedRestaurant('')} className="text-gray-600 hover:text-gray-800">
-            <Building className="w-5 h-5" />
+          <button 
+            onClick={() => setIsAuthenticated(false)} 
+            className="text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-lg mb-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <User className="w-8 h-8 text-white" />
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="flex items-center gap-6 mb-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <User className="w-10 h-10 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold">John Smith</h2>
+              <h2 className="text-2xl font-bold text-gray-900">John Smith</h2>
               <p className="text-gray-600">{selectedRestaurant}</p>
             </div>
           </div>
-          
-          <div className="space-y-4">
-            <div className="p-4 bg-gray-50 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors">
-              <span className="font-medium">Meal Allowance</span>
-              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Active</span>
+
+          <div className="bg-blue-50 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Clock className="w-5 h-5 text-blue-600" />
+              <span className="text-xl font-semibold text-blue-800">
+                {currentTime.toLocaleTimeString()}
+              </span>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors">
-              <span className="font-medium">Employee Discount</span>
-              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">20%</span>
+            <div className="flex items-center gap-3">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              <span className="text-blue-800">
+                {currentTime.toLocaleDateString(undefined, { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </span>
             </div>
           </div>
+
+          <div className="space-y-4">
+            <div className="p-4 bg-gray-50 rounded-xl flex justify-between items-center">
+              <span className="font-medium text-gray-900">Employee Discount</span>
+              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                20%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Company Policy</h3>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor 
+            incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis 
+            nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+          </p>
         </div>
       </div>
     </div>
