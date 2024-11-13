@@ -47,28 +47,50 @@ export const loginUser = async (email, password) => {
 
 export const registerEmployee = async (employeeData) => {
   try {
+    console.log('Starting registration process for:', employeeData.email);
+
     // Check if email is already registered
+    console.log('Checking if email exists...');
     const emailQuery = query(
       collection(db, 'users'),
       where('email', '==', employeeData.email)
     );
-    const emailCheck = await getDocs(emailQuery);
+    const emailCheck = await getDocs(emailQuery)
+      .catch(err => {
+        console.error('Error checking email:', err);
+        throw err;
+      });
+    console.log('Email check completed');
+
     if (!emailCheck.empty) {
+      console.log('Email already exists');
       throw new Error('Email already registered.');
     }
 
     // Create auth user
+    console.log('Creating auth user...');
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       employeeData.email,
       employeeData.password
-    );
+    ).catch(err => {
+      console.error('Error creating auth user:', err);
+      throw err;
+    });
+    console.log('Auth user created successfully:', userCredential.user.uid);
 
     // Send verification email
-    await sendEmailVerification(userCredential.user);
+    console.log('Sending verification email...');
+    await sendEmailVerification(userCredential.user)
+      .catch(err => {
+        console.error('Error sending verification:', err);
+        throw err;
+      });
+    console.log('Verification email sent');
 
     // If registering as admin (temporary)
     if (employeeData.restaurant === 'ADMIN') {
+      console.log('Creating admin user document...');
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         uid: userCredential.user.uid,
         firstName: employeeData.firstName,
@@ -78,9 +100,14 @@ export const registerEmployee = async (employeeData) => {
         status: 'active',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
+      }).catch(err => {
+        console.error('Error creating admin document:', err);
+        throw err;
       });
+      console.log('Admin user document created');
     } else {
       // Create pending registration document for regular employees
+      console.log('Creating pending registration document...');
       await setDoc(doc(db, 'pendingRegistrations', userCredential.user.uid), {
         uid: userCredential.user.uid,
         firstName: employeeData.firstName,
@@ -91,14 +118,22 @@ export const registerEmployee = async (employeeData) => {
         status: 'pending',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
+      }).catch(err => {
+        console.error('Error creating pending document:', err);
+        throw err;
       });
+      console.log('Pending registration document created');
     }
 
+    console.log('Registration completed successfully');
     return userCredential.user;
   } catch (error) {
+    console.error('Registration failed with error:', error);
     // If there's an error, clean up any created auth user
     if (auth.currentUser) {
-      await auth.currentUser.delete();
+      console.log('Cleaning up auth user...');
+      await auth.currentUser.delete()
+        .catch(err => console.error('Error cleaning up auth user:', err));
     }
     throw error;
   }

@@ -18,19 +18,15 @@ const RegisterPage = ({ onBack }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError(null);
 
     try {
-      await registerEmployee({
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        password: form.password,
-        restaurant: form.selectedRestaurant
-      });
-
+      console.log('Starting registration submission...', form);
+      const result = await registerEmployee(form);
+      console.log('Registration successful:', result);
       setSuccess(true);
     } catch (error) {
+      console.error('Registration error in component:', error);
       setError(error.message);
     } finally {
       setLoading(false);
