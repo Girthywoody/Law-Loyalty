@@ -40,13 +40,11 @@ const ManagerDashboard = () => {
         Promise.all(authorizedRestaurants.map(restaurantId => 
           getEmployees(restaurantId)
         )),
-        Promise.all(authorizedRestaurants.map(restaurantId => 
-          getPendingRegistrations(restaurantId)
-        ))
+        getPendingRegistrations(authorizedRestaurants)
       ]);
 
       setEmployees(employeesData.flat());
-      setPendingEmployees(pendingData.flat());
+      setPendingEmployees(pendingData);
     } catch (error) {
       setError('Failed to load data');
       console.error(error);

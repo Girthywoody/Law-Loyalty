@@ -28,16 +28,16 @@ export function AuthProvider({ children }) {
       let userData = null;
       let userCollection = null;
 
-      for (const collection of collections) {
+      for (const collectionName of collections) {
         const q = query(
-          collection(db, collection),
+          collection(db, collectionName),
           where('email', '==', email)
         );
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
           userData = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
-          userCollection = collection;
+          userCollection = collectionName;
           break;
         }
       }

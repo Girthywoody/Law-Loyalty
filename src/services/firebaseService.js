@@ -47,98 +47,45 @@ export const loginUser = async (email, password) => {
 
 export const registerEmployee = async (employeeData) => {
   try {
-    console.log('Starting registration process for:', employeeData.email);
-
-    // Skip email check as Firebase Auth handles duplicate emails
+    const docId = `${employeeData.firstName.toLowerCase()}-${employeeData.lastName.toLowerCase()}`;
     
-    // Create auth user
-    console.log('Creating auth user...');
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      employeeData.email,
-      employeeData.password
-    ).catch(err => {
-      console.error('Error creating auth user:', err);
-      if (err.code === 'auth/email-already-in-use') {
-        throw new Error('Email already registered.');
-      }
-      throw err;
+    // Create pending registration document
+    await setDoc(doc(db, 'pendingRegistrations', docId), {
+      firstName: employeeData.firstName,
+      lastName: employeeData.lastName,
+      email: employeeData.email,
+      restaurant: employeeData.selectedRestaurant,
+      role: 'employee',
+      status: 'pending',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     });
-    console.log('Auth user created successfully:', userCredential.user.uid);
 
-    // Send verification email
-    console.log('Sending verification email...');
-    await sendEmailVerification(userCredential.user)
-      .catch(err => {
-        console.error('Error sending verification:', err);
-        throw err;
-      });
-    console.log('Verification email sent');
-
-    // If registering as admin (temporary)
-    if (employeeData.selectedRestaurant === 'ADMIN') {  // Note: changed from restaurant to selectedRestaurant
-      console.log('Creating admin user document...');
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
-        uid: userCredential.user.uid,
-        firstName: employeeData.firstName,
-        lastName: employeeData.lastName,
-        email: employeeData.email,
-        role: 'admin',
-        status: 'active',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      }).catch(err => {
-        console.error('Error creating admin document:', err);
-        throw err;
-      });
-      console.log('Admin user document created');
-    } else {
-      // Create pending registration document for regular employees
-      console.log('Creating pending registration document...');
-      await setDoc(doc(db, 'pendingRegistrations', userCredential.user.uid), {
-        uid: userCredential.user.uid,
-        firstName: employeeData.firstName,
-        lastName: employeeData.lastName,
-        email: employeeData.email,
-        restaurant: employeeData.selectedRestaurant,
-        role: 'employee',
-        status: 'pending',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      }).catch(err => {
-        console.error('Error creating pending document:', err);
-        throw err;
-      });
-      console.log('Pending registration document created');
-    }
-
-    console.log('Registration completed successfully');
-    return userCredential.user;
+    return docId;
   } catch (error) {
-    console.error('Registration failed with error:', error);
-    // If there's an error, clean up any created auth user
-    if (auth.currentUser) {
-      console.log('Cleaning up auth user...');
-      await auth.currentUser.delete()
-        .catch(err => console.error('Error cleaning up auth user:', err));
-    }
     throw error;
   }
 };
 
 // Get pending registrations for manager
-export const getPendingRegistrations = async (restaurantId) => {
+export const getPendingRegistrations = async (restaurantIds) => {
   try {
+    // Handle both single restaurant ID and array of IDs
+    const restaurantArray = Array.isArray(restaurantIds) ? restaurantIds : [restaurantIds];
+    
     const q = query(
       collection(db, 'pendingRegistrations'),
-      where('restaurant', '==', restaurantId)
+      where('restaurant', 'in', restaurantArray)
     );
     
     const querySnapshot = await getDocs(q);
     const pendingUsers = [];
     
     querySnapshot.forEach((doc) => {
-      pendingUsers.push({ id: doc.id, ...doc.data() });
+      pendingUsers.push({ 
+        id: doc.id,
+        ...doc.data() 
+      });
     });
     
     return pendingUsers;
@@ -148,25 +95,25 @@ export const getPendingRegistrations = async (restaurantId) => {
 };
 
 // Approve employee registration
-export const approveRegistration = async (userId) => {
+export const approveRegistration = async (employeeId) => {
   try {
     // Get pending registration data
-    const pendingDoc = await getDoc(doc(db, 'pendingRegistrations', userId));
+    const pendingDoc = await getDoc(doc(db, 'pendingRegistrations', employeeId));
     if (!pendingDoc.exists()) {
       throw new Error('Pending registration not found.');
     }
 
     const pendingData = pendingDoc.data();
 
-    // Create user document
-    await setDoc(doc(db, 'users', userId), {
+    // Create employee document
+    await setDoc(doc(db, 'employees', employeeId), {
       ...pendingData,
       status: 'active',
       updatedAt: serverTimestamp()
     });
 
     // Delete pending registration
-    await deleteDoc(doc(db, 'pendingRegistrations', userId));
+    await deleteDoc(doc(db, 'pendingRegistrations', employeeId));
 
     return true;
   } catch (error) {
@@ -212,9 +159,8 @@ export const resetPassword = async (email) => {
 export const getEmployees = async (restaurantId) => {
   try {
     const q = query(
-      collection(db, 'users'),
-      where('restaurant', '==', restaurantId),
-      where('role', '==', 'employee')
+      collection(db, 'employees'),
+      where('restaurant', '==', restaurantId)
     );
     
     const querySnapshot = await getDocs(q);
@@ -233,19 +179,14 @@ export const getEmployees = async (restaurantId) => {
 // Get all managers
 export const getAllManagers = async () => {
   try {
-    const q = query(
-      collection(db, 'users'),
-      where('role', '==', 'manager')
-    );
-    
-    const querySnapshot = await getDocs(q);
+    const managersSnapshot = await getDocs(collection(db, 'managers'));
     const managers = [];
     
-    querySnapshot.forEach((doc) => {
-      const managerData = doc.data();
-      // Don't include sensitive data
-      delete managerData.password;
-      managers.push({ id: doc.id, ...managerData });
+    managersSnapshot.forEach((doc) => {
+      managers.push({ 
+        id: doc.id,  // This will now be firstName-lastName
+        ...doc.data() 
+      });
     });
     
     return managers;
@@ -257,30 +198,10 @@ export const getAllManagers = async () => {
 // Create new manager
 export const createManager = async (managerData) => {
   try {
-    // Check if email is already registered
-    const emailQuery = query(
-      collection(db, 'users'),
-      where('email', '==', managerData.email)
-    );
-    const emailCheck = await getDocs(emailQuery);
-    if (!emailCheck.empty) {
-      throw new Error('Email already registered.');
-    }
-
-    // Create auth user
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      managerData.email,
-      // Generate a random temporary password
-      Math.random().toString(36).slice(-8)
-    );
-
-    // Send password reset email for the manager to set their own password
-    await sendPasswordResetEmail(auth, managerData.email);
-
+    const docId = `${managerData.firstName.toLowerCase()}-${managerData.lastName.toLowerCase()}`;
+    
     // Create user document
-    await setDoc(doc(db, 'users', userCredential.user.uid), {
-      uid: userCredential.user.uid,
+    await setDoc(doc(db, 'managers', docId), {
       firstName: managerData.firstName,
       lastName: managerData.lastName,
       email: managerData.email,
@@ -291,7 +212,7 @@ export const createManager = async (managerData) => {
       updatedAt: serverTimestamp()
     });
 
-    return userCredential.user;
+    return docId;
   } catch (error) {
     throw error;
   }
