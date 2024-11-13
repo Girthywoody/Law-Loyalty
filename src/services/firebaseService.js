@@ -49,24 +49,8 @@ export const registerEmployee = async (employeeData) => {
   try {
     console.log('Starting registration process for:', employeeData.email);
 
-    // Check if email is already registered
-    console.log('Checking if email exists...');
-    const emailQuery = query(
-      collection(db, 'users'),
-      where('email', '==', employeeData.email)
-    );
-    const emailCheck = await getDocs(emailQuery)
-      .catch(err => {
-        console.error('Error checking email:', err);
-        throw err;
-      });
-    console.log('Email check completed');
-
-    if (!emailCheck.empty) {
-      console.log('Email already exists');
-      throw new Error('Email already registered.');
-    }
-
+    // Skip email check as Firebase Auth handles duplicate emails
+    
     // Create auth user
     console.log('Creating auth user...');
     const userCredential = await createUserWithEmailAndPassword(
@@ -75,6 +59,9 @@ export const registerEmployee = async (employeeData) => {
       employeeData.password
     ).catch(err => {
       console.error('Error creating auth user:', err);
+      if (err.code === 'auth/email-already-in-use') {
+        throw new Error('Email already registered.');
+      }
       throw err;
     });
     console.log('Auth user created successfully:', userCredential.user.uid);
@@ -89,7 +76,7 @@ export const registerEmployee = async (employeeData) => {
     console.log('Verification email sent');
 
     // If registering as admin (temporary)
-    if (employeeData.restaurant === 'ADMIN') {
+    if (employeeData.selectedRestaurant === 'ADMIN') {  // Note: changed from restaurant to selectedRestaurant
       console.log('Creating admin user document...');
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         uid: userCredential.user.uid,
@@ -113,7 +100,7 @@ export const registerEmployee = async (employeeData) => {
         firstName: employeeData.firstName,
         lastName: employeeData.lastName,
         email: employeeData.email,
-        restaurant: employeeData.restaurant,
+        restaurant: employeeData.selectedRestaurant,  // Note: changed from restaurant to selectedRestaurant
         role: 'employee',
         status: 'pending',
         createdAt: serverTimestamp(),
