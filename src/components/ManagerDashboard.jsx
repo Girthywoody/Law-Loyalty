@@ -18,16 +18,38 @@ const ManagerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Get the restaurant ID for queries
+  const getRestaurantId = () => {
+    if (!currentUser?.restaurant) return null;
+    return typeof currentUser.restaurant === 'object' 
+      ? currentUser.restaurant.id 
+      : currentUser.restaurant;
+  };
+
+  // Get restaurant display name
+  const getRestaurantName = () => {
+    if (!currentUser?.restaurant) return 'Unknown Restaurant';
+    return typeof currentUser.restaurant === 'object'
+      ? currentUser.restaurant.name
+      : currentUser.restaurant;
+  };
+
   useEffect(() => {
+    if (!getRestaurantId()) {
+      setError('No restaurant assigned');
+      setLoading(false);
+      return;
+    }
     loadData();
   }, [currentUser]);
 
   const loadData = async () => {
     try {
       setLoading(true);
+      const restaurantId = getRestaurantId();
       const [employeesData, pendingData] = await Promise.all([
-        getEmployees(currentUser.restaurant),
-        getPendingRegistrations(currentUser.restaurant)
+        getEmployees(restaurantId),
+        getPendingRegistrations(restaurantId)
       ]);
       setEmployees(employeesData);
       setPendingEmployees(pendingData);
@@ -85,13 +107,6 @@ const ManagerDashboard = () => {
     emp.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Helper function to get restaurant name
-  const getRestaurantDisplay = (restaurant) => {
-    if (typeof restaurant === 'string') return restaurant;
-    if (typeof restaurant === 'object' && restaurant.name) return restaurant.name;
-    return 'Unknown Restaurant';
-  };
-
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
@@ -104,7 +119,7 @@ const ManagerDashboard = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Employee Management</h1>
             <p className="text-gray-600 mt-1">
-              {getRestaurantDisplay(currentUser.restaurant)}
+              {getRestaurantName()}
             </p>
           </div>
           <button 

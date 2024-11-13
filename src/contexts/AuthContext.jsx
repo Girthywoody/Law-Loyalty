@@ -41,7 +41,15 @@ export function AuthProvider({ children }) {
       if (user) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         const userData = userDoc.data();
-        setCurrentUser({ ...user, ...userData });
+        
+        const restaurant = userData.restaurant;
+        const processedRestaurant = typeof restaurant === 'object' ? restaurant.id : restaurant;
+        
+        setCurrentUser({ 
+          ...user, 
+          ...userData,
+          restaurant: processedRestaurant
+        });
         setUserRole(userData.role);
         setUserRestaurants(userData.restaurants || []);
       } else {

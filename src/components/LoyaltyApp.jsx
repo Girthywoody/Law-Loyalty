@@ -2,26 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Building, LogOut, Coffee, Gift, UserPlus, ChevronDown, MapPin, Clock, Calendar } from 'lucide-react';
 import LoginPage from './LoginPage';
 import AdminDashboard from './AdminDashboard';
-
-const RESTAURANTS = [
-  { name: "Montana's", discount: "20%" },
-  { name: "Kelsey's", discount: "20%" },
-  { name: "Cora's Breakfast", discount: "10%" },
-  { name: "J's Roadhouse", discount: "20%" },
-  { name: "Swiss Chalet", discount: "20%" },
-  {
-    name: "Overtime Bar",
-    discount: "20%",
-    locations: ["Sudbury", "Val Caron", "Chelmsford"]
-  },
-  { name: "Lot 88 Steakhouse", discount: "20%" },
-  { name: "Poke Bar", discount: "20%" },
-  {
-    name: "Happy Life",
-    discount: "10%",
-    locations: ["Kingsway", "Val Caron", "Chelmsford"]
-  }
-];
+import { RESTAURANTS } from './restaurants';
 
 export default function LoyaltyApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -167,8 +148,10 @@ export default function LoyaltyApp() {
                 className="p-2 border rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               >
                 <option value="">All Restaurants</option>
-                {RESTAURANTS.map(r => (
-                  <option key={r} value={r}>{r}</option>
+                {RESTAURANTS.map(restaurant => (
+                  <option key={restaurant.name} value={restaurant.name}>
+                    {restaurant.name}
+                  </option>
                 ))}
               </select>
               <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
