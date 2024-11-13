@@ -85,6 +85,13 @@ const ManagerDashboard = () => {
     emp.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Helper function to get restaurant name
+  const getRestaurantDisplay = (restaurant) => {
+    if (typeof restaurant === 'string') return restaurant;
+    if (typeof restaurant === 'object' && restaurant.name) return restaurant.name;
+    return 'Unknown Restaurant';
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
@@ -96,7 +103,9 @@ const ManagerDashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Employee Management</h1>
-            <p className="text-gray-600 mt-1">{currentUser.restaurant}</p>
+            <p className="text-gray-600 mt-1">
+              {getRestaurantDisplay(currentUser.restaurant)}
+            </p>
           </div>
           <button 
             onClick={logout}
