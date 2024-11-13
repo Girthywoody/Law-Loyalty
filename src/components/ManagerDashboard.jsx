@@ -18,17 +18,24 @@ const ManagerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Get the restaurants this manager is authorized to manage
+  // Filter RESTAURANTS array to only show authorized restaurants
   const getAuthorizedRestaurants = () => {
     if (!currentUser?.restaurants) return [];
-    return currentUser.restaurants;
+    return RESTAURANTS.filter(restaurant => 
+      currentUser.restaurants.includes(restaurant.id)
+    );
   };
 
-  // Filter employees to only show those from authorized restaurants
-  const getEmployees = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const authorizedRestaurants = getAuthorizedRestaurants();
+      const authorizedRestaurants = currentUser.restaurants;
+      
+      if (!authorizedRestaurants?.length) {
+        setError('No restaurants assigned');
+        return;
+      }
+
       const [employeesData, pendingData] = await Promise.all([
         Promise.all(authorizedRestaurants.map(restaurantId => 
           getEmployees(restaurantId)
@@ -38,7 +45,6 @@ const ManagerDashboard = () => {
         ))
       ]);
 
-      // Flatten the arrays of employees and pending registrations
       setEmployees(employeesData.flat());
       setPendingEmployees(pendingData.flat());
     } catch (error) {
@@ -50,18 +56,14 @@ const ManagerDashboard = () => {
   };
 
   useEffect(() => {
-    if (!currentUser?.restaurants?.length) {
-      setError('No restaurants assigned');
-      setLoading(false);
-      return;
-    }
-    getEmployees();
+    loadData();
   }, [currentUser]);
 
+  // Add the approve/reject handlers
   const handleApprove = async (userId) => {
     try {
       await approveRegistration(userId);
-      await getEmployees(); // Refresh data
+      await loadData(); // Refresh data
     } catch (error) {
       setError('Failed to approve registration');
       console.error(error);
@@ -71,7 +73,7 @@ const ManagerDashboard = () => {
   const handleReject = async (userId) => {
     try {
       await rejectRegistration(userId);
-      await getEmployees(); // Refresh data
+      await loadData(); // Refresh data
     } catch (error) {
       setError('Failed to reject registration');
       console.error(error);
@@ -81,7 +83,7 @@ const ManagerDashboard = () => {
   const handleTerminate = async (userId) => {
     try {
       await updateEmployeeStatus(userId, 'terminated');
-      await getEmployees(); // Refresh data
+      await loadData(); // Refresh data
     } catch (error) {
       setError('Failed to terminate employee');
       console.error(error);
@@ -91,7 +93,7 @@ const ManagerDashboard = () => {
   const handleReactivate = async (userId) => {
     try {
       await updateEmployeeStatus(userId, 'active');
-      await getEmployees(); // Refresh data
+      await loadData(); // Refresh data
     } catch (error) {
       setError('Failed to reactivate employee');
       console.error(error);
