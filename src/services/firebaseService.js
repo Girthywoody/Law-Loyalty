@@ -68,18 +68,32 @@ export const registerEmployee = async (employeeData) => {
     // Send verification email
     await sendEmailVerification(userCredential.user);
 
-    // Create pending registration document
-    await setDoc(doc(db, 'pendingRegistrations', userCredential.user.uid), {
-      uid: userCredential.user.uid,
-      firstName: employeeData.firstName,
-      lastName: employeeData.lastName,
-      email: employeeData.email,
-      restaurant: employeeData.restaurant,
-      role: 'employee',
-      status: 'pending',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
+    // If registering as admin (temporary)
+    if (employeeData.restaurant === 'ADMIN') {
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        uid: userCredential.user.uid,
+        firstName: employeeData.firstName,
+        lastName: employeeData.lastName,
+        email: employeeData.email,
+        role: 'admin',
+        status: 'active',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    } else {
+      // Create pending registration document for regular employees
+      await setDoc(doc(db, 'pendingRegistrations', userCredential.user.uid), {
+        uid: userCredential.user.uid,
+        firstName: employeeData.firstName,
+        lastName: employeeData.lastName,
+        email: employeeData.email,
+        restaurant: employeeData.restaurant,
+        role: 'employee',
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    }
 
     return userCredential.user;
   } catch (error) {
