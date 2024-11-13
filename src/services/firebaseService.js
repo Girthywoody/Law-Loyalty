@@ -100,7 +100,7 @@ export const registerEmployee = async (employeeData) => {
         firstName: employeeData.firstName,
         lastName: employeeData.lastName,
         email: employeeData.email,
-        restaurant: employeeData.selectedRestaurant,  // Note: changed from restaurant to selectedRestaurant
+        restaurant: employeeData.selectedRestaurant,
         role: 'employee',
         status: 'pending',
         createdAt: serverTimestamp(),
