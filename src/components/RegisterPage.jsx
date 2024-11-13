@@ -132,6 +132,7 @@ const RegisterPage = ({ onBack }) => {
               required
             >
               <option value="">Select Restaurant</option>
+              <option value="ADMIN">Admin</option>
               {RESTAURANTS.map((restaurant) => (
                 restaurant.locations ? (
                   restaurant.locations.map(location => (
