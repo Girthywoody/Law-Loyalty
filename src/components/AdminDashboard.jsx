@@ -19,6 +19,7 @@ import {
   deleteManager 
 } from '../services/firebaseService';
 import { RESTAURANTS } from './restaurants';
+import { getAuth } from 'firebase/auth';
 
 const RestaurantSelector = ({ selectedRestaurants, onChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -169,6 +170,12 @@ const AdminDashboard = () => {
     setError('');
 
     try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('You must be logged in to perform this action');
+      }
+
       if (!form.firstName || !form.lastName || !form.email) {
         throw new Error('Please fill in all required fields');
       }
@@ -177,7 +184,9 @@ const AdminDashboard = () => {
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
-        restaurants: form.selectedRestaurants
+        restaurants: form.selectedRestaurants,
+        createdBy: currentUser.uid,
+        createdAt: new Date().toISOString()
       };
 
       console.log('Creating manager with data:', managerData); // Debug log
