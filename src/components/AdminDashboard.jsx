@@ -114,6 +114,16 @@ const RestaurantSelector = ({ selectedRestaurants, onChange }) => {
                 </div>
               ))}
             </div>
+
+            <div className="border-t p-2">
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="w-full px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+              >
+                Done
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -159,11 +169,20 @@ const AdminDashboard = () => {
     setError('');
 
     try {
-      await createManager({
-        ...form,
+      if (!form.firstName || !form.lastName || !form.email) {
+        throw new Error('Please fill in all required fields');
+      }
+
+      const managerData = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
         restaurants: form.selectedRestaurants
-      });
+      };
+
+      console.log('Creating manager with data:', managerData); // Debug log
       
+      await createManager(managerData);
       await loadManagers();
       setShowAddManager(false);
       setForm({
@@ -173,7 +192,8 @@ const AdminDashboard = () => {
         selectedRestaurants: []
       });
     } catch (err) {
-      setError('Failed to create manager');
+      console.error('Error creating manager:', err); // Debug log
+      setError(err.message || 'Failed to create manager');
     } finally {
       setLoading(false);
     }
@@ -250,6 +270,12 @@ const AdminDashboard = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl p-6 max-w-md w-full">
               <h2 className="text-xl font-bold mb-4">Add New Manager</h2>
+              
+              {error && (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
+                  {error}
+                </div>
+              )}
               
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
