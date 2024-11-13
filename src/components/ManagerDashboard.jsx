@@ -18,41 +18,29 @@ const ManagerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Get the restaurant ID for queries
-  const getRestaurantId = () => {
-    if (!currentUser?.restaurant) return null;
-    return typeof currentUser.restaurant === 'object' 
-      ? currentUser.restaurant.id 
-      : currentUser.restaurant;
+  // Get the restaurants this manager is authorized to manage
+  const getAuthorizedRestaurants = () => {
+    if (!currentUser?.restaurants) return [];
+    return currentUser.restaurants;
   };
 
-  // Get restaurant display name
-  const getRestaurantName = () => {
-    if (!currentUser?.restaurant) return 'Unknown Restaurant';
-    return typeof currentUser.restaurant === 'object'
-      ? currentUser.restaurant.name
-      : currentUser.restaurant;
-  };
-
-  useEffect(() => {
-    if (!getRestaurantId()) {
-      setError('No restaurant assigned');
-      setLoading(false);
-      return;
-    }
-    loadData();
-  }, [currentUser]);
-
-  const loadData = async () => {
+  // Filter employees to only show those from authorized restaurants
+  const getEmployees = async () => {
     try {
       setLoading(true);
-      const restaurantId = getRestaurantId();
+      const authorizedRestaurants = getAuthorizedRestaurants();
       const [employeesData, pendingData] = await Promise.all([
-        getEmployees(restaurantId),
-        getPendingRegistrations(restaurantId)
+        Promise.all(authorizedRestaurants.map(restaurantId => 
+          getEmployees(restaurantId)
+        )),
+        Promise.all(authorizedRestaurants.map(restaurantId => 
+          getPendingRegistrations(restaurantId)
+        ))
       ]);
-      setEmployees(employeesData);
-      setPendingEmployees(pendingData);
+
+      // Flatten the arrays of employees and pending registrations
+      setEmployees(employeesData.flat());
+      setPendingEmployees(pendingData.flat());
     } catch (error) {
       setError('Failed to load data');
       console.error(error);
@@ -61,10 +49,19 @@ const ManagerDashboard = () => {
     }
   };
 
+  useEffect(() => {
+    if (!currentUser?.restaurants?.length) {
+      setError('No restaurants assigned');
+      setLoading(false);
+      return;
+    }
+    getEmployees();
+  }, [currentUser]);
+
   const handleApprove = async (userId) => {
     try {
       await approveRegistration(userId);
-      await loadData(); // Refresh data
+      await getEmployees(); // Refresh data
     } catch (error) {
       setError('Failed to approve registration');
       console.error(error);
@@ -74,7 +71,7 @@ const ManagerDashboard = () => {
   const handleReject = async (userId) => {
     try {
       await rejectRegistration(userId);
-      await loadData(); // Refresh data
+      await getEmployees(); // Refresh data
     } catch (error) {
       setError('Failed to reject registration');
       console.error(error);
@@ -84,7 +81,7 @@ const ManagerDashboard = () => {
   const handleTerminate = async (userId) => {
     try {
       await updateEmployeeStatus(userId, 'terminated');
-      await loadData(); // Refresh data
+      await getEmployees(); // Refresh data
     } catch (error) {
       setError('Failed to terminate employee');
       console.error(error);
@@ -94,7 +91,7 @@ const ManagerDashboard = () => {
   const handleReactivate = async (userId) => {
     try {
       await updateEmployeeStatus(userId, 'active');
-      await loadData(); // Refresh data
+      await getEmployees(); // Refresh data
     } catch (error) {
       setError('Failed to reactivate employee');
       console.error(error);
@@ -119,7 +116,7 @@ const ManagerDashboard = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Employee Management</h1>
             <p className="text-gray-600 mt-1">
-              {getRestaurantName()}
+              {currentUser?.restaurants.length > 0 ? currentUser.restaurants.map(restaurant => restaurant.name).join(', ') : 'Unknown Restaurant'}
             </p>
           </div>
           <button 

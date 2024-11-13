@@ -127,9 +127,8 @@ export const registerEmployee = async (employeeData) => {
 };
 
 // Get pending registrations for manager
-export const getPendingRegistrations = async (restaurant) => {
+export const getPendingRegistrations = async (restaurantId) => {
   try {
-    const restaurantId = typeof restaurant === 'object' ? restaurant.id : restaurant;
     const q = query(
       collection(db, 'pendingRegistrations'),
       where('restaurant', '==', restaurantId)
@@ -209,10 +208,9 @@ export const resetPassword = async (email) => {
   }
 };
 
-// Get employees for a restaurant
-export const getEmployees = async (restaurant) => {
+// Get employees for multiple restaurants
+export const getEmployees = async (restaurantId) => {
   try {
-    const restaurantId = typeof restaurant === 'object' ? restaurant.id : restaurant;
     const q = query(
       collection(db, 'users'),
       where('restaurant', '==', restaurantId),
