@@ -45,7 +45,6 @@ export const loginUser = async (email, password) => {
   }
 };
 
-// Register new employee
 export const registerEmployee = async (employeeData) => {
   try {
     // Check if email is already registered
@@ -97,6 +96,10 @@ export const registerEmployee = async (employeeData) => {
 
     return userCredential.user;
   } catch (error) {
+    // If there's an error, clean up any created auth user
+    if (auth.currentUser) {
+      await auth.currentUser.delete();
+    }
     throw error;
   }
 };
