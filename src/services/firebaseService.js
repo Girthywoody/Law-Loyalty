@@ -49,20 +49,38 @@ export const registerEmployee = async (employeeData) => {
   try {
     const docId = `${employeeData.firstName.toLowerCase()}-${employeeData.lastName.toLowerCase()}`;
     
-    // Create pending registration document
-    await setDoc(doc(db, 'pendingRegistrations', docId), {
-      firstName: employeeData.firstName,
-      lastName: employeeData.lastName,
-      email: employeeData.email,
-      restaurant: employeeData.selectedRestaurant,
-      role: 'employee',
-      status: 'pending',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
+    // If registering as admin, create directly in managers collection
+    if (employeeData.role === 'admin') {
+      await setDoc(doc(db, 'managers', docId), {
+        firstName: employeeData.firstName,
+        lastName: employeeData.lastName,
+        email: employeeData.email,
+        role: 'admin',
+        status: 'active',  // Set as active immediately
+        restaurants: 'all', // Access to all restaurants
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      // Send password setup email
+      await sendPasswordResetEmail(auth, employeeData.email);
+    } else {
+      // Regular employee registration process
+      await setDoc(doc(db, 'pendingRegistrations', docId), {
+        firstName: employeeData.firstName,
+        lastName: employeeData.lastName,
+        email: employeeData.email,
+        restaurant: employeeData.selectedRestaurant,
+        role: 'employee',
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    }
 
     return docId;
   } catch (error) {
+    console.error('Error registering:', error);
     throw error;
   }
 };
