@@ -8,7 +8,8 @@ const RegisterPage = ({ onBack }) => {
     firstName: '',
     lastName: '',
     email: '',
-    selectedRestaurant: ''
+    selectedRestaurant: '',
+    role: 'employee'
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -38,7 +39,7 @@ const RegisterPage = ({ onBack }) => {
     setLoading(true);
 
     try {
-      if (!form.firstName || !form.lastName || !form.email || !form.selectedRestaurant) {
+      if (!form.firstName || !form.lastName || !form.email || !form.selectedRestaurant || !form.role) {
         throw new Error('Please fill in all fields');
       }
 
@@ -48,13 +49,23 @@ const RegisterPage = ({ onBack }) => {
         throw new Error('Please enter a valid email address');
       }
 
-      // Register employee
-      await registerEmployee({
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        selectedRestaurant: form.selectedRestaurant
-      });
+      // Register user based on role
+      if (form.role === 'admin') {
+        await registerEmployee({
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          selectedRestaurant: form.selectedRestaurant,
+          role: 'admin'
+        });
+      } else {
+        await registerEmployee({
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          selectedRestaurant: form.selectedRestaurant
+        });
+      }
 
       setSuccess(true);
     } catch (error) {
@@ -134,6 +145,18 @@ const RegisterPage = ({ onBack }) => {
               onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
               className="w-full pl-10 px-4 py-3 rounded-xl bg-white border border-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
             />
+          </div>
+
+          <div className="relative">
+            <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            <select
+              value={form.role}
+              onChange={(e) => setForm(prev => ({ ...prev, role: e.target.value }))}
+              className="w-full pl-10 px-4 py-3 rounded-xl bg-white border border-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all appearance-none"
+            >
+              <option value="employee">Employee</option>
+              <option value="admin">Admin</option>
+            </select>
           </div>
 
           <div className="relative">
