@@ -39,8 +39,8 @@ const RegisterPage = ({ onBack }) => {
     setLoading(true);
 
     try {
-      if (!form.firstName || !form.lastName || !form.email || !form.selectedRestaurant || !form.role) {
-        throw new Error('Please fill in all fields');
+      if (!form.firstName || !form.lastName || !form.email || !form.role) {
+        throw new Error('Please fill in all required fields');
       }
 
       // Email validation
@@ -49,16 +49,19 @@ const RegisterPage = ({ onBack }) => {
         throw new Error('Please enter a valid email address');
       }
 
-      // Register user based on role
+      // For admin registration, include all restaurants
       if (form.role === 'admin') {
         await registerEmployee({
           firstName: form.firstName,
           lastName: form.lastName,
           email: form.email,
-          selectedRestaurant: form.selectedRestaurant,
+          selectedRestaurant: 'all',  // Special value for admin
           role: 'admin'
         });
       } else {
+        if (!form.selectedRestaurant) {
+          throw new Error('Please select a restaurant');
+        }
         await registerEmployee({
           firstName: form.firstName,
           lastName: form.lastName,
@@ -159,21 +162,23 @@ const RegisterPage = ({ onBack }) => {
             </select>
           </div>
 
-          <div className="relative">
-            <Building className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-            <select
-              value={form.selectedRestaurant}
-              onChange={(e) => setForm(prev => ({ ...prev, selectedRestaurant: e.target.value }))}
-              className="w-full pl-10 px-4 py-3 rounded-xl bg-white border border-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all appearance-none"
-            >
-              <option value="">Select Restaurant</option>
-              {getAllRestaurantOptions().map(option => (
-                <option key={option.id} value={option.id}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {form.role !== 'admin' && (
+            <div className="relative">
+              <Building className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <select
+                value={form.selectedRestaurant}
+                onChange={(e) => setForm(prev => ({ ...prev, selectedRestaurant: e.target.value }))}
+                className="w-full pl-10 px-4 py-3 rounded-xl bg-white border border-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all appearance-none"
+              >
+                <option value="">Select Restaurant</option>
+                {getAllRestaurantOptions().map(option => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {error && (
             <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">
