@@ -238,17 +238,22 @@ export class AuthService {
   // Authentication
   static async login(email, password) {
     try {
+      console.log('Attempting login for email:', email);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log('Firebase Auth successful, user:', userCredential.user.email);
       
       // First check managers collection for admin
       const managerQuery = query(
         collection(db, 'managers'),
         where('email', '==', email)
       );
+      console.log('Checking managers collection...');
       const managerSnapshot = await getDocs(managerQuery);
+      console.log('Managers query result:', managerSnapshot.empty ? 'No results' : 'Found results');
       
       if (!managerSnapshot.empty) {
         const userData = { id: managerSnapshot.docs[0].id, ...managerSnapshot.docs[0].data() };
+        console.log('Found manager data:', userData);
         return { user: userCredential.user, userData, collection: 'managers' };
       }
 
@@ -257,16 +262,24 @@ export class AuthService {
         collection(db, 'employees'),
         where('email', '==', email)
       );
+      console.log('Checking employees collection...');
       const employeeSnapshot = await getDocs(employeeQuery);
+      console.log('Employees query result:', employeeSnapshot.empty ? 'No results' : 'Found results');
       
       if (!employeeSnapshot.empty) {
         const userData = { id: employeeSnapshot.docs[0].id, ...employeeSnapshot.docs[0].data() };
+        console.log('Found employee data:', userData);
         return { user: userCredential.user, userData, collection: 'employees' };
       }
 
-      throw new Error('User not found');
+      console.log('No user found in either collection');
+      throw new Error('User not found in database');
     } catch (error) {
-      console.error('Error logging in:', error);
+      console.error('Login error details:', {
+        code: error.code,
+        message: error.message,
+        fullError: error
+      });
       throw error;
     }
   }

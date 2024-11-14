@@ -53,13 +53,22 @@ export const loginUser = async (email, password) => {
 
 export const registerEmployee = async (employeeData) => {
   try {
-    // Create docId from email prefix (before the @)
+    console.log('Starting registration for:', employeeData);
+    
+    // Create docId from email prefix
     const emailPrefix = employeeData.email.split('@')[0];
     const docId = emailPrefix.toLowerCase();
     
-    // If registering as admin, create directly in managers collection
+    // If registering as admin
     if (employeeData.role === 'admin') {
-      // Create user document first
+      console.log('Creating admin account...');
+      
+      // Create Firebase auth user with a random password
+      const tempPassword = Math.random().toString(36).slice(-8);
+      const userCredential = await createUserWithEmailAndPassword(auth, employeeData.email, tempPassword);
+      console.log('Firebase auth user created');
+
+      // Create user document in managers collection
       await setDoc(doc(db, 'managers', docId), {
         firstName: employeeData.firstName,
         lastName: employeeData.lastName,
@@ -70,11 +79,12 @@ export const registerEmployee = async (employeeData) => {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      console.log('Admin document created in managers collection');
 
-      // Send password setup email
+      // Send password reset email
       await sendPasswordResetEmail(auth, employeeData.email);
+      console.log('Password reset email sent');
       
-      // Show success message
       alert('Admin account created successfully. Please check your email to set up your password.');
     } else {
       // Regular employee registration process
@@ -92,7 +102,11 @@ export const registerEmployee = async (employeeData) => {
 
     return docId;
   } catch (error) {
-    console.error('Error registering:', error);
+    console.error('Registration error details:', {
+      code: error.code,
+      message: error.message,
+      fullError: error
+    });
     throw error;
   }
 };
