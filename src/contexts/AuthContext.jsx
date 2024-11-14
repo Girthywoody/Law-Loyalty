@@ -1,3 +1,4 @@
+import { createContext, useContext, useState, useEffect } from 'react';
 import { 
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -30,6 +31,64 @@ export const UserStatus = {
   ACTIVE: 'active',
   TERMINATED: 'terminated'
 };
+
+// Create the context
+export const AuthContext = createContext();
+
+// Create the provider component
+export function AuthProvider({ children }) {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Set up authentication state observer
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        // Get additional user data from Firestore
+        const collections = ['managers', 'employees'];
+        let userData = null;
+        let userCollection = null;
+
+        for (const collectionName of collections) {
+          const q = query(
+            collection(db, collectionName),
+            where('email', '==', user.email)
+          );
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            userData = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
+            userCollection = collectionName;
+            break;
+          }
+        }
+
+        setCurrentUser({ user, userData, collection: userCollection });
+      } else {
+        setCurrentUser(null);
+      }
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const value = {
+    currentUser,
+    AuthService
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
+}
+
+// Custom hook for using the auth context
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
 export class AuthService {
   // Manager Management
