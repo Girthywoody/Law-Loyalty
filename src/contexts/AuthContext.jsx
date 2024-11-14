@@ -41,29 +41,40 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up authentication state observer
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        // Get additional user data from Firestore
-        const collections = ['managers', 'employees'];
-        let userData = null;
-        let userCollection = null;
+        try {
+          // Get email prefix for document ID
+          const emailPrefix = user.email.split('@')[0];
+          const docId = emailPrefix.toLowerCase();
 
-        for (const collectionName of collections) {
-          const q = query(
-            collection(db, collectionName),
-            where('email', '==', user.email)
-          );
-          const querySnapshot = await getDocs(q);
+          // Check managers collection first
+          const managerDoc = await getDoc(doc(db, 'managers', docId));
           
-          if (!querySnapshot.empty) {
-            userData = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
-            userCollection = collectionName;
-            break;
+          if (managerDoc.exists()) {
+            setCurrentUser({
+              user,
+              userData: { id: docId, ...managerDoc.data() },
+              collection: 'managers'
+            });
+          } else {
+            // Check employees collection
+            const employeeDoc = await getDoc(doc(db, 'employees', docId));
+            
+            if (employeeDoc.exists()) {
+              setCurrentUser({
+                user,
+                userData: { id: docId, ...employeeDoc.data() },
+                collection: 'employees'
+              });
+            } else {
+              setCurrentUser(null);
+            }
           }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          setCurrentUser(null);
         }
-
-        setCurrentUser({ user, userData, collection: userCollection });
       } else {
         setCurrentUser(null);
       }

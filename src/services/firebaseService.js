@@ -23,31 +23,39 @@ import { auth, db } from '../firebase/config';
 export const loginUser = async (email, password) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
     
-    if (!userDoc.exists()) {
-      // Check if user is in pending registration
-      const pendingDoc = await getDoc(doc(db, 'pendingRegistrations', userCredential.user.uid));
-      if (pendingDoc.exists()) {
-        throw new Error('Your registration is pending approval.');
-      }
-      throw new Error('User not found.');
+    // Extract first and last name from email (before the @)
+    const emailPrefix = email.split('@')[0];
+    const docId = emailPrefix.toLowerCase(); // This should match how you created the admin document
+    
+    // First check managers collection
+    const managerDoc = await getDoc(doc(db, 'managers', docId));
+    
+    if (managerDoc.exists()) {
+      const userData = { id: docId, ...managerDoc.data() };
+      return { user: userCredential.user, userData, collection: 'managers' };
     }
 
-    const userData = userDoc.data();
-    if (userData.status === 'terminated') {
-      throw new Error('Your account has been terminated. Please contact your manager.');
+    // Then check employees collection
+    const employeeDoc = await getDoc(doc(db, 'employees', docId));
+    
+    if (employeeDoc.exists()) {
+      const userData = { id: docId, ...employeeDoc.data() };
+      return { user: userCredential.user, userData, collection: 'employees' };
     }
 
-    return { user: userCredential.user, userData };
+    throw new Error('User not found');
   } catch (error) {
+    console.error('Error logging in:', error);
     throw error;
   }
 };
 
 export const registerEmployee = async (employeeData) => {
   try {
-    const docId = `${employeeData.firstName.toLowerCase()}-${employeeData.lastName.toLowerCase()}`;
+    // Create docId from email prefix (before the @)
+    const emailPrefix = employeeData.email.split('@')[0];
+    const docId = emailPrefix.toLowerCase();
     
     // If registering as admin, create directly in managers collection
     if (employeeData.role === 'admin') {
