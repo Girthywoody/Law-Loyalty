@@ -51,19 +51,23 @@ export const registerEmployee = async (employeeData) => {
     
     // If registering as admin, create directly in managers collection
     if (employeeData.role === 'admin') {
+      // Create user document first
       await setDoc(doc(db, 'managers', docId), {
         firstName: employeeData.firstName,
         lastName: employeeData.lastName,
         email: employeeData.email,
         role: 'admin',
-        status: 'active',  // Set as active immediately
-        restaurants: 'all', // Access to all restaurants
+        status: 'active',
+        restaurants: 'all',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
 
       // Send password setup email
       await sendPasswordResetEmail(auth, employeeData.email);
+      
+      // Show success message
+      alert('Admin account created successfully. Please check your email to set up your password.');
     } else {
       // Regular employee registration process
       await setDoc(doc(db, 'pendingRegistrations', docId), {

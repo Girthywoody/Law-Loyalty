@@ -229,34 +229,31 @@ export class AuthService {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      // Check user collections in order of hierarchy
-      const collections = ['managers', 'employees'];
-      let userData = null;
-      let userCollection = null;
-
-      for (const collectionName of collections) {
-        const q = query(
-          collection(db, collectionName),
-          where('email', '==', email)
-        );
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          userData = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
-          userCollection = collectionName;
-          break;
-        }
+      // First check managers collection for admin
+      const managerQuery = query(
+        collection(db, 'managers'),
+        where('email', '==', email)
+      );
+      const managerSnapshot = await getDocs(managerQuery);
+      
+      if (!managerSnapshot.empty) {
+        const userData = { id: managerSnapshot.docs[0].id, ...managerSnapshot.docs[0].data() };
+        return { user: userCredential.user, userData, collection: 'managers' };
       }
 
-      if (!userData) {
-        throw new Error('User not found');
+      // Then check employees collection
+      const employeeQuery = query(
+        collection(db, 'employees'),
+        where('email', '==', email)
+      );
+      const employeeSnapshot = await getDocs(employeeQuery);
+      
+      if (!employeeSnapshot.empty) {
+        const userData = { id: employeeSnapshot.docs[0].id, ...employeeSnapshot.docs[0].data() };
+        return { user: userCredential.user, userData, collection: 'employees' };
       }
 
-      if (userData.status === UserStatus.TERMINATED) {
-        throw new Error('Account has been terminated');
-      }
-
-      return { user: userCredential.user, userData, collection: userCollection };
+      throw new Error('User not found');
     } catch (error) {
       console.error('Error logging in:', error);
       throw error;
