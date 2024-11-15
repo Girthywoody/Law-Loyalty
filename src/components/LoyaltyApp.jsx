@@ -25,9 +25,9 @@ import {
   DialogHeader, 
   DialogTitle,
   DialogTrigger 
-} from '@/components/ui/dialog';
-import { TabList, TabPanel, TabPanels, Tabs, TabTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+} from '../components/ui/dialog';
+import { TabList, TabPanel, TabPanels, Tabs, TabTrigger } from '../components/ui/tabs';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { 
   Table, 
   TableBody, 
@@ -35,7 +35,7 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from '@/components/ui/table';
+} from '../components/ui/table';
 import { 
   User, 
   Clock, 
