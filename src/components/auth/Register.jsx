@@ -114,41 +114,35 @@ const Register = () => {
 
             <div className="space-y-2">
                 <label className="text-sm font-medium">Restaurant</label>
-                <Select
+                <select
                     value={formData.restaurant}
-                    onValueChange={(value) => setFormData({ ...formData, restaurant: value, location: '' })}
+                    onChange={(e) => setFormData({ ...formData, restaurant: e.target.value, location: '' })}
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                    <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a restaurant" />
-                    </SelectTrigger>
-                    <SelectContent>
+                    <option value="">Select a restaurant</option>
                     {RESTAURANTS.map(restaurant => (
-                        <SelectItem key={restaurant.id} value={restaurant.id}>
+                    <option key={restaurant.id} value={restaurant.id}>
                         {restaurant.name}
-                        </SelectItem>
+                    </option>
                     ))}
-                    </SelectContent>
-                </Select>
+                </select>
                 </div>
 
                 {selectedRestaurant?.locations && (
                 <div className="space-y-2">
                     <label className="text-sm font-medium">Location</label>
-                    <Select
+                    <select
                     value={formData.location}
-                    onValueChange={(value) => setFormData({ ...formData, location: value })}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                    <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {selectedRestaurant.locations.map(location => (
-                        <SelectItem key={location.id} value={location.id}>
-                            {location.name}
-                        </SelectItem>
-                        ))}
-                    </SelectContent>
-                    </Select>
+                    <option value="">Select a location</option>
+                    {selectedRestaurant.locations.map(location => (
+                        <option key={location.id} value={location.id}>
+                        {location.name}
+                        </option>
+                    ))}
+                    </select>
                 </div>
                 )}
 
