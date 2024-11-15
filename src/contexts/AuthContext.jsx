@@ -1,82 +1,25 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signOut,
-} from 'firebase/auth';
-import { 
-  doc, 
-  setDoc,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-  serverTimestamp 
-} from 'firebase/firestore';
-import { auth, db } from '../firebase/config';
+// src/contexts/AuthContext.jsx
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getDoc, doc } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
-// User roles enum
-export const UserRoles = {
-  MANAGER: 'manager',
-  EMPLOYEE: 'employee'
-};
+const AuthContext = createContext();
 
-// User status enum
-export const UserStatus = {
-  PENDING: 'pending',
-  ACTIVE: 'active',
-  TERMINATED: 'terminated'
-};
+export const useAuth = () => useContext(AuthContext);
 
-// Create the context
-export const AuthContext = createContext();
-
-// Create the provider component
-export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null);
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const auth = getAuth();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        try {
-          // Get email prefix for document ID
-          const emailPrefix = user.email.split('@')[0];
-          const docId = emailPrefix.toLowerCase();
-
-          // Check managers collection first
-          const managerDoc = await getDoc(doc(db, 'managers', docId));
-          
-          if (managerDoc.exists()) {
-            setCurrentUser({
-              user,
-              userData: { id: docId, ...managerDoc.data() },
-              collection: 'managers'
-            });
-          } else {
-            // Check employees collection
-            const employeeDoc = await getDoc(doc(db, 'employees', docId));
-            
-            if (employeeDoc.exists()) {
-              setCurrentUser({
-                user,
-                userData: { id: docId, ...employeeDoc.data() },
-                collection: 'employees'
-              });
-            } else {
-              setCurrentUser(null);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-          setCurrentUser(null);
-        }
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        setUser({ ...firebaseUser, ...userDoc.data() });
       } else {
-        setCurrentUser(null);
+        setUser(null);
       }
       setLoading(false);
     });
@@ -84,245 +27,9 @@ export function AuthProvider({ children }) {
     return unsubscribe;
   }, []);
 
-  const value = {
-    currentUser,
-    AuthService
-  };
-
   return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, loading }}>
+      {children}
     </AuthContext.Provider>
   );
-}
-
-// Custom hook for using the auth context
-export function useAuth() {
-  return useContext(AuthContext);
-}
-
-export class AuthService {
-  // Manager Management
-  static async createManager(managerData) {
-    try {
-      const { email, firstName, lastName, restaurants } = managerData;
-      
-      // Create document ID from name
-      const docId = `${firstName.toLowerCase()}-${lastName.toLowerCase()}`;
-      
-      // Create manager document
-      await setDoc(doc(db, 'managers', docId), {
-        email,
-        firstName,
-        lastName,
-        restaurants, // Array of restaurant IDs they can manage
-        role: UserRoles.MANAGER,
-        status: UserStatus.PENDING,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-
-      // Send password setup email
-      await sendPasswordResetEmail(auth, email);
-
-      return docId;
-    } catch (error) {
-      console.error('Error creating manager:', error);
-      throw error;
-    }
-  }
-
-  static async updateManagerRestaurants(managerId, restaurants) {
-    try {
-      await updateDoc(doc(db, 'managers', managerId), {
-        restaurants,
-        updatedAt: serverTimestamp()
-      });
-      return true;
-    } catch (error) {
-      console.error('Error updating manager restaurants:', error);
-      throw error;
-    }
-  }
-
-  static async deleteManager(managerId) {
-    try {
-      await deleteDoc(doc(db, 'managers', managerId));
-      return true;
-    } catch (error) {
-      console.error('Error deleting manager:', error);
-      throw error;
-    }
-  }
-
-  // Employee Management
-  static async registerEmployee(employeeData) {
-    try {
-      const { email, firstName, lastName, restaurant } = employeeData;
-      
-      // Create document ID from name
-      const docId = `${firstName.toLowerCase()}-${lastName.toLowerCase()}`;
-      
-      // Create pending registration document
-      await setDoc(doc(db, 'pendingRegistrations', docId), {
-        email,
-        firstName,
-        lastName,
-        restaurant,
-        role: UserRoles.EMPLOYEE,
-        status: UserStatus.PENDING,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-
-      return docId;
-    } catch (error) {
-      console.error('Error registering employee:', error);
-      throw error;
-    }
-  }
-
-  static async approveEmployee(employeeId) {
-    try {
-      // Get pending registration data
-      const pendingDoc = await getDoc(doc(db, 'pendingRegistrations', employeeId));
-      if (!pendingDoc.exists()) {
-        throw new Error('Pending registration not found');
-      }
-
-      const employeeData = pendingDoc.data();
-
-      // Create employee document
-      await setDoc(doc(db, 'employees', employeeId), {
-        ...employeeData,
-        status: UserStatus.ACTIVE,
-        updatedAt: serverTimestamp()
-      });
-
-      // Send password setup email
-      await sendPasswordResetEmail(auth, employeeData.email);
-
-      // Delete pending registration
-      await deleteDoc(doc(db, 'pendingRegistrations', employeeId));
-
-      return true;
-    } catch (error) {
-      console.error('Error approving employee:', error);
-      throw error;
-    }
-  }
-
-  static async rejectEmployee(employeeId) {
-    try {
-      await deleteDoc(doc(db, 'pendingRegistrations', employeeId));
-      return true;
-    } catch (error) {
-      console.error('Error rejecting employee:', error);
-      throw error;
-    }
-  }
-
-  static async terminateEmployee(employeeId) {
-    try {
-      await updateDoc(doc(db, 'employees', employeeId), {
-        status: UserStatus.TERMINATED,
-        updatedAt: serverTimestamp()
-      });
-      return true;
-    } catch (error) {
-      console.error('Error terminating employee:', error);
-      throw error;
-    }
-  }
-
-  // Authentication
-  static async login(email, password) {
-    try {
-      console.log('Attempting login for email:', email);
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log('Firebase Auth successful, user:', userCredential.user.email);
-      
-      // First check managers collection for admin
-      const managerQuery = query(
-        collection(db, 'managers'),
-        where('email', '==', email)
-      );
-      console.log('Checking managers collection...');
-      const managerSnapshot = await getDocs(managerQuery);
-      console.log('Managers query result:', managerSnapshot.empty ? 'No results' : 'Found results');
-      
-      if (!managerSnapshot.empty) {
-        const userData = { id: managerSnapshot.docs[0].id, ...managerSnapshot.docs[0].data() };
-        console.log('Found manager data:', userData);
-        return { user: userCredential.user, userData, collection: 'managers' };
-      }
-
-      // Then check employees collection
-      const employeeQuery = query(
-        collection(db, 'employees'),
-        where('email', '==', email)
-      );
-      console.log('Checking employees collection...');
-      const employeeSnapshot = await getDocs(employeeQuery);
-      console.log('Employees query result:', employeeSnapshot.empty ? 'No results' : 'Found results');
-      
-      if (!employeeSnapshot.empty) {
-        const userData = { id: employeeSnapshot.docs[0].id, ...employeeSnapshot.docs[0].data() };
-        console.log('Found employee data:', userData);
-        return { user: userCredential.user, userData, collection: 'employees' };
-      }
-
-      console.log('No user found in either collection');
-      throw new Error('User not found in database');
-    } catch (error) {
-      console.error('Login error details:', {
-        code: error.code,
-        message: error.message,
-        fullError: error
-      });
-      throw error;
-    }
-  }
-
-  static async logout() {
-    try {
-      await signOut(auth);
-      return true;
-    } catch (error) {
-      console.error('Error logging out:', error);
-      throw error;
-    }
-  }
-
-  // Helper methods
-  static async getManagerRestaurants(managerId) {
-    try {
-      const managerDoc = await getDoc(doc(db, 'managers', managerId));
-      if (!managerDoc.exists()) {
-        throw new Error('Manager not found');
-      }
-      return managerDoc.data().restaurants || [];
-    } catch (error) {
-      console.error('Error getting manager restaurants:', error);
-      throw error;
-    }
-  }
-
-  static async getPendingRegistrations(restaurantIds) {
-    try {
-      const q = query(
-        collection(db, 'pendingRegistrations'),
-        where('restaurant', 'in', restaurantIds)
-      );
-      
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-    } catch (error) {
-      console.error('Error getting pending registrations:', error);
-      throw error;
-    }
-  }
-}
+};
