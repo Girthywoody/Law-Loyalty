@@ -4,8 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
-import { RESTAURANTS } from '../../constants/restaurants';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+  } from "@/components/ui/select";import { RESTAURANTS } from '../../constants/restaurants';
 import { registerUser } from '../../firebase/config';
 
 const Register = () => {
@@ -108,34 +113,44 @@ const Register = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Restaurant</label>
-              <Select
-                value={formData.restaurant}
-                onValueChange={(value) => setFormData({ ...formData, restaurant: value, location: '' })}
-              >
-                {RESTAURANTS.map(restaurant => (
-                  <option key={restaurant.id} value={restaurant.id}>
-                    {restaurant.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            {selectedRestaurant?.locations && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Location</label>
+                <label className="text-sm font-medium">Restaurant</label>
                 <Select
-                  value={formData.location}
-                  onValueChange={(value) => setFormData({ ...formData, location: value })}
+                    value={formData.restaurant}
+                    onValueChange={(value) => setFormData({ ...formData, restaurant: value, location: '' })}
                 >
-                  {selectedRestaurant.locations.map(location => (
-                    <option key={location.id} value={location.id}>
-                      {location.name}
-                    </option>
-                  ))}
+                    <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a restaurant" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {RESTAURANTS.map(restaurant => (
+                        <SelectItem key={restaurant.id} value={restaurant.id}>
+                        {restaurant.name}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
                 </Select>
-              </div>
-            )}
+                </div>
+
+                {selectedRestaurant?.locations && (
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Location</label>
+                    <Select
+                    value={formData.location}
+                    onValueChange={(value) => setFormData({ ...formData, location: value })}
+                    >
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {selectedRestaurant.locations.map(location => (
+                        <SelectItem key={location.id} value={location.id}>
+                            {location.name}
+                        </SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                </div>
+                )}
 
             <Button type="submit" className="w-full">
               Register
