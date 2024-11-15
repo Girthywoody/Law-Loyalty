@@ -20,26 +20,12 @@ import {
   onSnapshot 
 } from 'firebase/firestore';
 import { 
-  Card, 
-  CardHeader, 
-  CardContent 
-} from '@/components/ui/card';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle,
   DialogTrigger 
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { TabList, TabPanel, TabPanels, Tabs, TabTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
@@ -58,6 +44,10 @@ import {
   Settings, 
   LogOut 
 } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './ui/select'
 
 // Initialize Firebase (replace with your config)
 const firebaseConfig = {
