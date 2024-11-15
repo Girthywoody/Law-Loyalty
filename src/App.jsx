@@ -2,16 +2,28 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+
+// Auth Components
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+
+// Dashboard Components
 import AdminDashboard from './components/dashboard/admin/AdminDashboard';
+import RestaurantOverview from './components/dashboard/admin/RestaurantOverview';
+import ActivityLog from './components/dashboard/admin/ActivityLog';
 import ManagerDashboard from './components/dashboard/manager/ManagerDashboard';
-import EmployeeDashboard from '../components/dashboard/EmployeeDashboard';
+import EmployeeDashboard from '/components/dashboard/EmployeeDashboard';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
   }
 
   if (!user || !allowedRoles.includes(user.role)) {
@@ -77,4 +89,3 @@ const App = () => {
 };
 
 export default App;
-
