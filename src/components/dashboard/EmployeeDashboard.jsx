@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Select } from '@/components/ui/select';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { RESTAURANTS } from '@/constants/restaurants';
 
 const EmployeeDashboard = ({ userData }) => {
   const [currentTime, setCurrentTime] = useState(new Date());

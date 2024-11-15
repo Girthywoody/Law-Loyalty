@@ -12,7 +12,7 @@ import AdminDashboard from './components/dashboard/admin/AdminDashboard';
 import RestaurantOverview from './components/dashboard/admin/RestaurantOverview';
 import ActivityLog from './components/dashboard/admin/ActivityLog';
 import ManagerDashboard from './components/dashboard/manager/ManagerDashboard';
-import EmployeeDashboard from '/components/dashboard/EmployeeDashboard';
+import EmployeeDashboard from '@/components/dashboard/EmployeeDashboard';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
