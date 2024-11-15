@@ -2,7 +2,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Register from './components/auth/Register';
 import AdminDashboard from './components/dashboard/admin/AdminDashboard';
 import ManagerDashboard from './components/dashboard/manager/ManagerDashboard';
 import EmployeeDashboard from '../components/dashboard/EmployeeDashboard';
